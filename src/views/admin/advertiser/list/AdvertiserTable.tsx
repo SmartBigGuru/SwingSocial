@@ -1,0 +1,394 @@
+'use client'
+
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+
+import { useRouter, useSearchParams } from 'next/navigation'
+
+import Card from '@mui/material/Card'
+import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
+import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
+import { CardHeader, Skeleton, TablePagination, Typography } from '@mui/material'
+import classNames from 'classnames'
+
+import { toast } from 'react-toastify'
+
+import { supabase } from '@/utils/supabase'
+import tableStyles from '@core/styles/table.module.css'
+import type { EditDialogHandle } from '../edit';
+import EditDialog from '../edit'
+import type { DetailViewHandle } from '../view';
+import DetailView from '../view'
+import CustomAvatar from '@/@core/components/mui/Avatar'
+
+const colors = [
+  'rgba(255, 99, 132, 0.1)',
+  'rgba(54, 162, 235, 0.1)',
+  'rgba(255, 206, 86, 0.1)',
+  'rgba(75, 192, 192, 0.1)',
+  'rgba(153, 102, 255, 0.1)',
+  'rgba(255, 159, 64, 0.1)',
+  'rgba(255, 99, 132, 0.1)',
+  'rgba(255, 205, 86, 0.1)',
+  'rgba(75, 192, 192, 0.1)',
+  'rgba(54, 162, 235, 0.1)',
+];
+
+declare module '@tanstack/table-core' {
+  interface FilterFns {
+    fuzzy: FilterFn<unknown>
+  }
+  interface FilterMeta {
+    itemRank: RankingInfo
+  }
+}
+
+interface UserType {
+  DateOfBirth: Date;
+  Username: string;
+  Avatar: string;
+  About: string;
+  AccountType: string;
+  Gender: string;
+}
+
+type TableAction = UserType & {
+  action?: string
+}
+
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+  const itemRank = rankItem(row.getValue(columnId), value)
+
+  addMeta({
+    itemRank
+  })
+
+  return itemRank.passed
+}
+
+export interface RefreshHandle {
+  refresh: () => void
+}
+
+const columnHelper = createColumnHelper<TableAction>()
+
+const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
+  const searchParams = useSearchParams()
+  const [rowSelection, setRowSelection] = useState({});
+  const [searchData, setSearchData] = useState<UserType[]>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [size, setSize] = useState(Number(searchParams.get('size') ?? 10));
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 0));
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
+  const [type, setType] = useState(searchParams.get('type') ?? '')
+  const router = useRouter()
+  const editRef = useRef<EditDialogHandle>(null)
+  const detailRef = useRef<DetailViewHandle>(null)
+
+
+  useImperativeHandle(ref, () => ({
+    refresh: () => {
+      fetchData();
+    }
+  }))
+
+  const changeParam = () => {
+    const searchParams = new URLSearchParams()
+
+    if (type) searchParams.set('type', type)
+    if (search) searchParams.set('search', search)
+    searchParams.set('size', String(size))
+    searchParams.set('page', String(pageIndex))
+    const queryString = searchParams.toString()
+
+    router.push(`/admin/sp/advertiser-manage/${queryString ? `?${queryString}` : ''}`)
+  }
+
+  const fetchData = async () => {
+    const sType = (searchParams.get('type') ?? '');
+    const sSearch = (searchParams.get('search') ?? '');
+    const sPage = (Number(searchParams.get('page') ?? 0))
+    const sSize = (Number(searchParams.get('size') ?? 10))
+
+    try {
+      let query = '/api/admin/user?'
+      const params = new URLSearchParams();
+
+      if (sType) params.append('type', sType);
+      if (sSearch) params.append('search', sSearch);
+      params.append('page', sPage.toString());
+      params.append('size', sSize.toString());
+      const apiUrl = `${query}${params}`
+      console.log(apiUrl)
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const data = await response.json();
+      setSearchData(data.profiles)
+      setLoading(false)
+      setTotalCount(Number(data.totalCount))
+    } catch (error: any) {
+    }
+  }
+
+  const genColor = (name: string) => {
+    const hashCode = (str: string): number => {
+      let hash = 0;
+
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0; // Convert to 32bit integer
+      }
+
+      return hash;
+    };
+
+    const hash = hashCode(name);
+    const colorIndex = Math.abs(hash) % colors.length;
+
+    return colors[colorIndex];
+  }
+
+  // Hooks
+  useEffect(() => {
+    changeParam()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [size, pageIndex, type, search])
+
+  useEffect(() => {
+    const debouncedFetch = setTimeout(() => {
+      fetchData()
+    }, 500)
+
+    setType(searchParams.get('type') ?? '');
+    setSearch(searchParams.get('search') ?? '');
+    setPageIndex(Number(searchParams.get('page') ?? 0))
+    setSize(Number(searchParams.get('size') ?? 10))
+
+    return () => clearTimeout(debouncedFetch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  const DeactiveAction = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ type: 'Deactive' })
+        .eq('auth_id', userId)
+
+      if (error) throw error
+
+      fetchData()
+    } catch (error: any) {
+      toast.error(`${error.message}`, {
+        autoClose: 3000,
+        type: 'error'
+      })
+    }
+  }
+
+  const columns = useMemo<ColumnDef<TableAction, any>[]>(
+
+    () => [
+      {
+        id: 'no',
+        header: ({ table }) => (
+          <>No</>
+        ),
+        cell: ({ row }) => (
+          <>{size * pageIndex + row.index + 1}</>
+        )
+      },
+      {
+        id: 'contact',
+        header: ({ table }) => (
+          <>Avatar</>
+        ),
+        cell: ({ row }) => {
+          const username = `${row.original.Username}`;
+          const avatarColor = genColor(username);
+
+          return (
+            <div className='flex items-center gap-3'>
+              <CustomAvatar style={{ backgroundColor: avatarColor }} skin='light-static' src={row.original.Avatar} />
+            </div>
+          )
+        }
+      },
+      columnHelper.accessor('Username', {
+        header: 'Username',
+        cell: ({ row }) => row.original.Username && <Typography>{row.original.Username}</Typography>
+      }),
+      columnHelper.accessor('Gender', {
+        header: 'Gender',
+        cell: ({ row }) => <Typography>{row.original.Gender}</Typography>
+      }),
+      columnHelper.accessor('AccountType', {
+        header: 'AccountType',
+        cell: ({ row }) => <Typography>{row.original.AccountType}</Typography>
+      }),
+      columnHelper.accessor('DateOfBirth', {
+        header: 'DateOfBirth',
+        cell: ({ row }) => <Typography>{
+          `${new Date(row.original.DateOfBirth)
+            .toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+              year: 'numeric',
+            })}`}</Typography>
+      }),
+    ],
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchData]
+  )
+
+  const table = useReactTable({
+    data: searchData as any,
+    columns,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+
+    },
+    state: {
+      rowSelection,
+      globalFilter,
+      columnPinning: { right: ['action'] }
+    },
+    initialState: {
+      pagination: {
+        pageSize: size
+      },
+      columnPinning: {
+        right: ['action']
+      }
+    },
+    enableColumnPinning: true,
+    enableRowSelection: true,
+    globalFilterFn: fuzzyFilter,
+    onRowSelectionChange: setRowSelection,
+    getCoreRowModel: getCoreRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues()
+  })
+
+  const columnCount = table.getVisibleFlatColumns().length;
+  const skeletonTableRow = [];
+  const skeletonTableRows = [];
+
+  for (let i = 0; i < columnCount; i++) {
+    skeletonTableRow.push(<td key={`td-${i}`}><Skeleton /></td>);
+  }
+
+  for (let i = 0; i < size; i++) {
+    skeletonTableRows.push(<tr key={`tr-${i}`}>{skeletonTableRow}</tr>);
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader title='User' />
+        <div className='scrollbar-custom overflow-x-auto '>
+          <table className={tableStyles.table}>
+            <thead>
+              {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map(header => (
+                    <th key={header.id}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <>
+                          <div
+                            className={classNames({
+                              'flex items-center': header.column.getIsSorted(),
+                              'cursor-pointer select-none': header.column.getCanSort()
+                            })}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {{
+                              asc: <i className='ri-arrow-up-s-line text-xl' />,
+                              desc: <i className='ri-arrow-down-s-line text-xl' />
+                            }[header.column.getIsSorted() as 'asc' | 'desc'] ?? null}
+                          </div>
+                        </>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            {
+              loading ? (
+                <>
+                  <tbody>
+                    {skeletonTableRows}
+                  </tbody>
+                </>) :
+                table.getFilteredRowModel().rows.length === 0 ? (
+                  <tbody>
+                    <tr>
+                      <td colSpan={table.getVisibleFlatColumns().length} className='text-center'>
+                        No data available
+                      </td>
+                    </tr>
+                  </tbody>
+                ) :
+                  (
+                    <tbody className='scrollbar-custom overflow-y-scroll '>
+                      {table
+                        .getRowModel()
+                        .rows
+                        .map(row => {
+                          return (
+                            <tr key={row.id} className={classNames({ selected: row.getIsSelected() })}>
+                              {row.getVisibleCells().map(cell => (
+                                <td key={cell.id}
+                                >
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>
+                              ))}
+                            </tr>
+                          )
+                        })}
+                    </tbody>
+                  )}
+          </table>
+        </div>
+        <TablePagination
+          rowsPerPageOptions={[10, 25, 50]}
+          component='div'
+          className='border-bs'
+          count={totalCount}
+          rowsPerPage={size}
+          page={pageIndex}
+
+          SelectProps={{
+            inputProps: { 'aria-label': 'rows per page' }
+          }}
+          onPageChange={(_, page) => {
+            setPageIndex(page)
+          }}
+          onRowsPerPageChange={e => {
+            setSize(Number(e.target.value))
+            table.setPageSize(Number(e.target.value))
+            setPageIndex(0)
+          }}
+        />
+      </Card>
+      <EditDialog refresh={fetchData} ref={editRef} />
+      <DetailView ref={detailRef} refresh={fetchData} />
+    </>
+  )
+})
+
+export default UserTable
