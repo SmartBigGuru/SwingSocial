@@ -1,13 +1,14 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { format } from 'date-fns';
 
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import Card from '@mui/material/Card'
 import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
 import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
-import { CardHeader, Skeleton, TablePagination, Typography } from '@mui/material'
+import { CardHeader, Skeleton, TablePagination, Typography, Button, IconButton, Chip } from '@mui/material'
 import classNames from 'classnames'
 
 import { toast } from 'react-toastify'
@@ -19,6 +20,8 @@ import EditDialog from '../edit'
 import type { DetailViewHandle } from '../view';
 import DetailView from '../view'
 import CustomAvatar from '@/@core/components/mui/Avatar'
+import OptionMenu from '@/@core/components/option-menu'
+import Link from '@/components/Link'
 
 const colors = [
   'rgba(255, 99, 132, 0.1)',
@@ -43,12 +46,12 @@ declare module '@tanstack/table-core' {
 }
 
 interface UserType {
-  DateOfBirth: Date;
-  Username: string;
   Avatar: string;
-  About: string;
+  Username: string;
   AccountType: string;
-  Gender: string;
+  Title: string;
+  Price: string;
+  CreatedAt: string;
 }
 
 type TableAction = UserType & {
@@ -128,7 +131,8 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       }
 
       const data = await response.json();
-      setSearchData(data.profiles)
+      console.log(data);
+      setSearchData(data)
       setLoading(false)
       setTotalCount(Number(data.totalCount))
     } catch (error: any) {
@@ -223,24 +227,69 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         header: 'Username',
         cell: ({ row }) => row.original.Username && <Typography>{row.original.Username}</Typography>
       }),
-      columnHelper.accessor('Gender', {
-        header: 'Gender',
-        cell: ({ row }) => <Typography>{row.original.Gender}</Typography>
-      }),
       columnHelper.accessor('AccountType', {
-        header: 'AccountType',
+        header: 'Type',
         cell: ({ row }) => <Typography>{row.original.AccountType}</Typography>
       }),
-      columnHelper.accessor('DateOfBirth', {
-        header: 'DateOfBirth',
-        cell: ({ row }) => <Typography>{
-          `${new Date(row.original.DateOfBirth)
-            .toLocaleDateString('en-US', {
-              month: 'short',
-              day: '2-digit',
-              year: 'numeric',
-            })}`}</Typography>
+      columnHelper.accessor('Title', {
+        header: 'Subscription Status',
+        cell: ({ row }) => (row.original.Title === "Free Member") ? <div><Chip label={`${row.original.Title} ${row.original.Price}$`} color='primary' variant='outlined' /></div> :
+          <div><Chip label={`${row.original.Title} ${row.original.Price}$`} color='success' variant='outlined'></Chip></div>
       }),
+      columnHelper.accessor('CreatedAt', {
+        header: 'Created Date',
+        cell: ({ row }) => <Typography>{format(new Date(row.original.CreatedAt), 'dd/MM/yyyy HH:mm')}</Typography>
+      }),
+      columnHelper.accessor('action', {
+        header: 'Action',
+        cell: ({ row }) => (
+          <OptionMenu
+            iconButtonProps={{ size: 'medium' }}
+            iconClassName='text-textSecondary text-[22px]'
+            leftAlignMenu
+            options={[
+              {
+                text: 'Delete',
+                menuItemProps: {
+                  onClick: () => {
+                    console.log("Clicked Delete");
+                  },
+                  className: 'flex items-center gap-2'
+                }
+              },
+              {
+                text: 'Upgrade',
+                menuItemProps: {
+                  onClick: () => {
+                    console.log("Clicked Upgrade");
+                  },
+                  className: 'flex items-center gap-2'
+                }
+              },
+              {
+                text: 'Downgrade',
+                menuItemProps: {
+                  onClick: () => { console.log("Clicked Downgrade"); },
+                  className: 'flex items-center gap-2'
+                }
+              },
+              {
+                text: 'View',
+                menuItemProps: {
+                  onClick: () => { console.log("Clicked View"); },
+                  className: 'flex items-center gap-2'
+                }
+              }
+            ]}
+          />
+        ),
+        enableSorting: false,
+        enablePinning: true,
+        enableColumnFilter: false,
+        enableGlobalFilter: false,
+        enableHiding: false,
+        enableResizing: false,
+      })
     ],
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -296,7 +345,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   return (
     <>
       <Card>
-        <CardHeader title='User' />
+        <CardHeader title='User Management Panel' />
         <div className='scrollbar-custom overflow-x-auto '>
           <table className={tableStyles.table}>
             <thead>

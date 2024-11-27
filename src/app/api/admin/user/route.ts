@@ -7,6 +7,7 @@
  */
 
 // Next Imports
+import { responsiveFontSizes } from '@mui/material';
 import { NextResponse } from 'next/server'
 import { Pool } from 'pg';
 
@@ -22,41 +23,43 @@ const pool = new Pool({
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const countResult = await pool.query('SELECT COUNT(*) AS total FROM "azure"."UserProfiles"');
-    const totalCount = countResult.rows[0].total;
+    console.log("aaaa");
+    const countResult = await pool.query('SELECT * FROM public.admin_getalldata()');    
+    // const totalCount = countResult.rows[0].total;
 
-    const search = searchParams.get('search') || '';
-    const type = searchParams.get('type') || '';
-    const page = searchParams.get('page') || '';
-    const size = searchParams.get('size') || '';
+    // const search = searchParams.get('search') || '';
+    // const type = searchParams.get('type') || '';
+    // const page = searchParams.get('page') || '';
+    // const size = searchParams.get('size') || '';
 
-    let query = 'SELECT "DateOfBirth", "Username", "Avatar", "About", "AccountType", "Gender" FROM "azure"."UserProfiles" WHERE TRUE';
-    const conditions: string[] = [];
-    const values: any[] = [];
-    if (search) {
-      conditions.push(`"Username" ILIKE $${values.length + 1}`); // Case-insensitive search
-      values.push(`%${search}%`); // Use wildcards for partial matches
-    }
-    if (type) {
-      conditions.push(`"AccountType" = $${values.length + 1}`);
-      values.push(type);
-    }
+    // //let query = 'SELECT "Title", "Username", "Avatar", "About", "AccountType", "Gender" FROM "azure"."UserProfiles" WHERE TRUE';
+    // let query = "select * From public.admin_getalldata()"
+    // const conditions: string[] = [];
+    // const values: any[] = [];
+    // if (search) {
+    //   conditions.push(`"Username" ILIKE $${values.length + 1}`); // Case-insensitive search
+    //   values.push(`%${search}%`); // Use wildcards for partial matches
+    // }
+    // if (type) {
+    //   conditions.push(`"AccountType" = $${values.length + 1}`);
+    //   values.push(type);
+    // }
 
-    if (conditions.length > 0) {
-      query += ' AND ' + conditions.join(' AND ');
-    }
+    // if (conditions.length > 0) {
+    //   query += ' AND ' + conditions.join(' AND ');
+    // }
 
-    query += ` OFFSET $${values.length + 1} LIMIT $${values.length + 2}`;
-    values.push((Number(size)*Number(page)), Number(size));
+    // query += ` OFFSET $${values.length + 1} LIMIT $${values.length + 2}`;
+    // values.push((Number(size)*Number(page)), Number(size));
 
-    const profilesResult = await pool.query(query, values);
-    const responseData = {
-      totalCount,          // Total count of records
-      profiles: profilesResult.rows // Fetched user profiles
-    };
-    console.log(responseData)
+    // const profilesResult = await pool.query(query, values);
+    // const responseData = {
+    //   totalCount,          // Total count of records
+    //   profiles: profilesResult.rows // Fetched user profiles
+    // };
+    
 
-    return NextResponse.json(responseData);
+    return NextResponse.json(countResult.rows);
   } catch (error) {
     console.error('Database query failed:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

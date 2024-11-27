@@ -81,21 +81,21 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         exactMatch={false}
         activeUrl='/admin/qa/user-manage'
       >
-        User Manage
+        Admin Manage
       </MenuItem>
       <MenuItem href={(`/admin/qa/advertiser-manage`)}
-        icon={<i className='ri-archive-drawer-line' />}
+        icon={<i className='ri-account-circle-line' />}
         exactMatch={false}
         activeUrl='/admin/qa/advertiser-manage'
       >
         Profile Manage
       </MenuItem>
       <MenuItem href={(`/admin/qa/partner-manage`)}
-        icon={<i className='ri-account-circle-line' />}
+        icon={<i className='ri-calendar-event-line' />}
         exactMatch={false}
         activeUrl='/admin/qa/partner-manage'
       >
-        Partner Manage
+        Event Manage
       </MenuItem>
     </>
   )
@@ -115,21 +115,21 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         exactMatch={false}
         activeUrl='/admin/sp/user-manage'
       >
-        User Manage
+        Admin Manage
       </MenuItem>
       <MenuItem href={(`/admin/sp/advertiser-manage`)}
-        icon={<i className='ri-archive-drawer-line' />}
+        icon={<i className='ri-account-circle-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/advertiser-manage'
       >
         Profile Manage
       </MenuItem>
       <MenuItem href={(`/admin/sp/partner-manage`)}
-        icon={<i className='ri-account-circle-line' />}
+        icon={<i className='ri-calendar-event-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/partner-manage'
       >
-        Partner Manage
+        Event Manage
       </MenuItem>
       <MenuItem href={(`/admin/sp/vertical`)}
         icon={<i className='ri-archive-stack-line' />}
@@ -191,21 +191,21 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         exactMatch={false}
         activeUrl='/admin/um/user-manage'
       >
-        User Manage
+        Admin Manage
       </MenuItem>
       <MenuItem href={(`/admin/um/advertiser-manage`)}
-        icon={<i className='ri-archive-drawer-line' />}
+        icon={<i className='ri-account-circle-line' />}
         exactMatch={false}
         activeUrl='/admin/um/advertiser-manage'
       >
         Profile Manage
       </MenuItem>
       <MenuItem href={(`/admin/um/partner-manage`)}
-        icon={<i className='ri-account-circle-line' />}
+        icon={<i className='ri-calendar-event-line' />}
         exactMatch={false}
         activeUrl='/admin/um/partner-manage'
       >
-        Partner Manage
+        Event Manage
       </MenuItem>
     </>
   )

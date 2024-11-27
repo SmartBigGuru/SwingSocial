@@ -126,13 +126,13 @@ const TableFilters = (props: RefreshProps) => {
         </Grid>
         <Grid item xs={1} md={0.1} lg={2.5} />
         <Grid item xs={6} md={2.8} lg={2.5} >
-          <Button variant='outlined'
+          {/* <Button variant='outlined'
             color='success' fullWidth
             startIcon={<i className='ri-add-line' />}
             onClick={() => { addAdvertiserRef.current?.open() }}
           >
-            New Advertiser
-          </Button>
+            Add New User
+          </Button> */}
         </Grid>
 
       </Grid>

@@ -54,7 +54,7 @@ export type Config = {
 }
 
 const themeConfig: Config = {
-  templateName: 'RMS',
+  templateName: 'SwingSocial Admin',
   homePageUrl: '/',
   settingsCookieName: 'materio-mui-next-demo-1',
   mode: 'system', // 'system', 'light', 'dark'

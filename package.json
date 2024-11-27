@@ -89,10 +89,10 @@
     "@iconify/utils": "2.1.24",
     "@types/json2csv": "^5.0.7",
     "@types/mapbox-gl": "^3.1.0",
-    "@types/node": "^20.14.2",
+    "@types/node": "22.10.0",
     "@types/pdfmake": "^0.2.9",
     "@types/pg": "^8.11.10",
-    "@types/react": "^18.3.3",
+    "@types/react": "18.3.12",
     "@types/react-datepicker": "^6.2.0",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "10.4.19",
@@ -115,7 +115,7 @@
     "tailwindcss": "3.4.4",
     "tailwindcss-logical": "3.0.1",
     "tsx": "4.15.2",
-    "typescript": "5.4.5"
+    "typescript": "5.7.2"
   },
   "resolutions": {
     "immutable": "3.7.4",

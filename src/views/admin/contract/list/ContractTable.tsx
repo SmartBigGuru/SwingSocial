@@ -94,6 +94,8 @@ const ColorOfStatus: StatusType = {
 // Column Definitions
 const columnHelper = createColumnHelper<ContractTypeWithAction>()
 
+
+
 const ContractListComponent = () => {
   // States
   const [rowSelection, setRowSelection] = useState({});
