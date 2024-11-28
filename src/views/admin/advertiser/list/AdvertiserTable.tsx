@@ -81,7 +81,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [size, setSize] = useState(Number(searchParams.get('size') ?? 10));
   const [totalCount, setTotalCount] = useState(0);
-  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 0));
+  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 1));
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const [type, setType] = useState(searchParams.get('type') ?? '')
@@ -89,6 +89,11 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const editRef = useRef<EditDialogHandle>(null)
   const detailRef = useRef<DetailViewHandle>(null)
 
+  useEffect(() => {
+    if(pageIndex==0 ){
+      setPageIndex(1)
+    }
+  }, [pageIndex]);
 
   useImperativeHandle(ref, () => ({
     refresh: () => {
@@ -101,6 +106,8 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
     if (type) searchParams.set('type', type)
     if (search) searchParams.set('search', search)
+
+    console.log(String(size));
     searchParams.set('size', String(size))
     searchParams.set('page', String(pageIndex))
     const queryString = searchParams.toString()
@@ -111,7 +118,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const fetchData = async () => {
     const sType = (searchParams.get('type') ?? '');
     const sSearch = (searchParams.get('search') ?? '');
-    const sPage = (Number(searchParams.get('page') ?? 0))
+    var sPage = (Number(searchParams.get('page') ?? 1))
     const sSize = (Number(searchParams.get('size') ?? 10))
 
     try {
@@ -120,6 +127,9 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
       if (sType) params.append('type', sType);
       if (sSearch) params.append('search', sSearch);
+      if(sPage==0){
+        sPage =1
+      }
       params.append('page', sPage.toString());
       params.append('size', sSize.toString());
       const apiUrl = `${query}${params}`
@@ -132,7 +142,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
       const data = await response.json();
       console.log(data);
-      setSearchData(data)
+      setSearchData(data?.profiles)
       setLoading(false)
       setTotalCount(Number(data.totalCount))
     } catch (error: any) {
@@ -159,6 +169,9 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
   // Hooks
   useEffect(() => {
+    if(pageIndex==0){
+      setPageIndex(1)
+    }
     changeParam()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size, pageIndex, type, search])
@@ -170,7 +183,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
     setType(searchParams.get('type') ?? '');
     setSearch(searchParams.get('search') ?? '');
-    setPageIndex(Number(searchParams.get('page') ?? 0))
+    setPageIndex(Number(searchParams.get('page') ?? 1))
     setSize(Number(searchParams.get('size') ?? 10))
 
     return () => clearTimeout(debouncedFetch)
