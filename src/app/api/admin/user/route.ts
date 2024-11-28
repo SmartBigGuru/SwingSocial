@@ -22,15 +22,31 @@ const pool = new Pool({
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    console.log("aaaa");
-    const countResult = await pool.query('SELECT * FROM public.admin_getalldata()');    
-    // const totalCount = countResult.rows[0].total;
+    const { searchParams } = new URL(req.url);    
 
-    // const search = searchParams.get('search') || '';
-    // const type = searchParams.get('type') || '';
-    // const page = searchParams.get('page') || '';
-    // const size = searchParams.get('size') || '';
+    const search = searchParams.get('search') || '';
+    const type = searchParams.get('type') || '';
+    const page = searchParams.get('page') || '';
+    const size = searchParams.get('size') || '';
+    var countResult = null;
+
+    console.log(searchParams)
+    console.log(search)
+    
+
+    if (search === '')
+    {
+      console.log("get all data");
+      countResult = await pool.query(`SELECT * FROM public.admin_getalldata()`);
+    }
+    else {
+      console.log("get filtered data");
+      countResult = await pool.query(`SELECT * FROM public.admin_userprofilematch($1)`, [search]);
+    }
+  
+    console.log(countResult.rows.length)
+
+    // const totalCount = countResult.rows[0].total;
 
     // //let query = 'SELECT "Title", "Username", "Avatar", "About", "AccountType", "Gender" FROM "azure"."UserProfiles" WHERE TRUE';
     // let query = "select * From public.admin_getalldata()"
@@ -59,7 +75,7 @@ export async function GET(req: Request) {
     // };
     
 
-    return NextResponse.json(countResult.rows);
+     return NextResponse.json(countResult.rows);
   } catch (error) {
     console.error('Database query failed:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
