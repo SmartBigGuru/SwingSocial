@@ -90,7 +90,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const detailRef = useRef<DetailViewHandle>(null)
 
   useEffect(() => {
-    if(pageIndex==0 ){
+    if (pageIndex == 0) {
       setPageIndex(1)
     }
   }, [pageIndex]);
@@ -127,8 +127,8 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
       if (sType) params.append('type', sType);
       if (sSearch) params.append('search', sSearch);
-      if(sPage==0){
-        sPage =1
+      if (sPage == 0) {
+        sPage = 1
       }
       params.append('page', sPage.toString());
       params.append('size', sSize.toString());
@@ -169,7 +169,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
   // Hooks
   useEffect(() => {
-    if(pageIndex==0){
+    if (pageIndex == 0) {
       setPageIndex(1)
     }
     changeParam()
@@ -217,7 +217,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           <>No</>
         ),
         cell: ({ row }) => (
-          <>{size * pageIndex + row.index + 1}</>
+          <>{size * (pageIndex - 1) + row.index + 1}</>
         )
       },
       {
@@ -432,7 +432,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           className='border-bs'
           count={totalCount}
           rowsPerPage={size}
-          page={pageIndex}
+          page={pageIndex - 1}
 
           SelectProps={{
             inputProps: { 'aria-label': 'rows per page' }

@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || ''; // Search query
     const type = searchParams.get('type') || ''; // Type filter
-    var page = parseInt(searchParams.get('page') || '1', 10); // Page number
+    var page = parseInt(searchParams.get('page') || '0', 10); // Page number
 
     if(page == 0){
       page = 1
