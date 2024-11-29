@@ -22,6 +22,8 @@ import DetailView from '../view'
 import CustomAvatar from '@/@core/components/mui/Avatar'
 import OptionMenu from '@/@core/components/option-menu'
 import Link from '@/components/Link'
+import Swal from 'sweetalert2';
+
 
 const colors = [
   'rgba(255, 99, 132, 0.1)',
@@ -90,7 +92,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const detailRef = useRef<DetailViewHandle>(null)
 
   useEffect(() => {
-    if (pageIndex == 0) {
+    if(pageIndex==0 ){
       setPageIndex(1)
     }
   }, [pageIndex]);
@@ -114,6 +116,48 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
     router.push(`/admin/sp/advertiser-manage/${queryString ? `?${queryString}` : ''}`)
   }
+  async function deleteUser(userId: string) {
+    try {
+      console.log(userId, "====userId");
+
+      // Confirm before deleting
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to delete the user with ID ${userId}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+      });
+
+      // If user confirms deletion
+      if (result.isConfirmed) {
+        const apiUrl = `/api/admin/user?id=${userId}`;
+
+        const response = await fetch(apiUrl, {
+          method: 'DELETE', // Specify the HTTP method
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete user with ID ${userId}`);
+        }
+
+        const responseData = await response.json();
+        console.log(responseData);
+
+        // Show success alert
+        Swal.fire('Deleted!', `User with ID ${userId} has been deleted.`, 'success');
+
+        // Optionally, refetch data to update the UI
+      } else {
+        console.log('User deletion cancelled.');
+      }
+    } catch (error: any) {
+      console.error('Error deleting user:', error.message);
+      // Show error alert
+      Swal.fire('Error!', 'An error occurred while deleting the user.', 'error');
+    }
+  }
 
   const fetchData = async () => {
     const sType = (searchParams.get('type') ?? '');
@@ -127,8 +171,8 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
       if (sType) params.append('type', sType);
       if (sSearch) params.append('search', sSearch);
-      if (sPage == 0) {
-        sPage = 1
+      if(sPage==0){
+        sPage =1
       }
       params.append('page', sPage.toString());
       params.append('size', sSize.toString());
@@ -169,7 +213,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
   // Hooks
   useEffect(() => {
-    if (pageIndex == 0) {
+    if(pageIndex==0){
       setPageIndex(1)
     }
     changeParam()
@@ -217,7 +261,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           <>No</>
         ),
         cell: ({ row }) => (
-          <>{size * (pageIndex - 1) + row.index + 1}</>
+          <>{size * pageIndex + row.index + 1}</>
         )
       },
       {
@@ -264,9 +308,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
               {
                 text: 'Delete',
                 menuItemProps: {
-                  onClick: () => {
-                    console.log("Clicked Delete");
-                  },
+                  onClick: () => deleteUser(row?.original?.Id), // Use a function to call deleteUser
                   className: 'flex items-center gap-2'
                 }
               },
@@ -282,14 +324,19 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
               {
                 text: 'Downgrade',
                 menuItemProps: {
-                  onClick: () => { console.log("Clicked Downgrade"); },
+                  onClick: () => {
+                    console.log("Clicked Downgrade");
+                  },
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'View',
                 menuItemProps: {
-                  onClick: () => { console.log("Clicked View"); },
+                  onClick: () => {
+                    console.log("Clicked View");
+                    detailRef.current?.open(row.original.Id)
+                  },
                   className: 'flex items-center gap-2'
                 }
               }
@@ -432,7 +479,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           className='border-bs'
           count={totalCount}
           rowsPerPage={size}
-          page={pageIndex - 1}
+          page={pageIndex}
 
           SelectProps={{
             inputProps: { 'aria-label': 'rows per page' }

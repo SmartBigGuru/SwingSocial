@@ -1,6 +1,6 @@
 'use client'
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -16,6 +16,7 @@ import { toast } from 'react-toastify'
 import { supabase } from '@/utils/supabase'
 import tableStyles from '@core/styles/table.module.css'
 import OptionMenu from '@/@core/components/option-menu'
+import DetailView, { DetailViewHandle } from '../view'
 
 declare module '@tanstack/table-core' {
   interface FilterFns {
@@ -80,6 +81,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [status, setStatus] = useState(searchParams.get('status') ?? '')
   const [company, setCompany] = useState(searchParams.get('company') ?? '')
   const router = useRouter()
+  const detailRef = useRef<DetailViewHandle>(null)
 
   useImperativeHandle(ref, () => ({
     refresh: () => {
@@ -104,60 +106,59 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
     const sStatus = (searchParams.get('status') ?? '');
     const sSearch = (searchParams.get('search') ?? '');
     const sCompany = (searchParams.get('company') ?? '');
-    const sPage = (Number(searchParams.get('page') ?? 0))
-    const sSize = (Number(searchParams.get('size') ?? 10))
+    const sPage = (Number(searchParams.get('page') ?? 0));
+    const sSize = (Number(searchParams.get('size') ?? 10));
 
     try {
       let companyId;
 
+      // Fetch company ID based on company name
       if (sCompany) {
         const { data: companyData, error: companyError } = await supabase
           .from('companies')
           .select('company_id')
           .eq('company_name', sCompany)
-          .single()
+          .single();
 
-        if (companyError) throw companyError
+        if (companyError) throw companyError;
 
-        companyId = companyData.company_id
+        companyId = companyData.company_id;
       }
 
-      let query = supabase.from('partners').select(`
-      *, 
-      companies (company_name),
-      assigns (status, budget)
-      `,
-        { count: 'exact' })
-        .order('created_date', { ascending: false });
+      // Build query parameters for fetching events from API
+      const queryParams = new URLSearchParams();
+      if (sStatus) queryParams.append('status', sStatus);
+      if (sSearch) queryParams.append('search', sSearch);
+      if (companyId) queryParams.append('company', sCompany);
+      queryParams.append('page', sPage.toString());
+      queryParams.append('size', sSize.toString());
 
-      if (sStatus) query = query.eq('status', sStatus)
-      if (companyId) query = query.eq('company_id', companyId)
+      const apiUrl = `/api/admin/events?${queryParams.toString()}`;
 
-      const textColumns = [
-        'first_name', 'last_name', 'email', 'phone'
-      ]
-
-      if (sSearch) {
-        query.or(textColumns.map(item => `${item}.ilike.%${sSearch}%`).join(','));
+      // Fetch event data from your API
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch event data');
       }
 
-      query = query.range(sPage * sSize, (sPage + 1) * sSize - 1)
+      const result = await response.json();
 
-      const { data, count, error } = await query;
-
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      setSearchData(data)
-      console.log(data)
-      setTotalCount(Number(count))
+      // Set the fetched data
+      setSearchData(result.events);
+      setTotalCount(result.totalCount);
+      console.log(result.events);
+
     } catch (error: any) {
-      console.log(error.message)
+      console.log(error.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
 
   // Hooks
   useEffect(() => {
@@ -210,41 +211,33 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
           <>{size * pageIndex + row.index + 1}</>
         )
       },
-      columnHelper.accessor('first_name', {
-        header: 'First Name',
-        cell: ({ row }) => <Typography>{row.original.first_name}</Typography>
+      columnHelper.accessor('Name', {
+        header: 'Event Name',
+        cell: ({ row }) => <Typography>{row.original.Name}</Typography>
       }),
-      columnHelper.accessor('last_name', {
-        header: 'Last Name',
-        cell: ({ row }) => <Typography>{row.original.last_name}</Typography>
+      columnHelper.accessor('Category', {
+        header: 'Category',
+        cell: ({ row }) => <Typography>{row.original.Category}</Typography>
       }),
-      columnHelper.accessor('companies', {
-        header: 'Company',
-        cell: ({ row }) => row.original.companies.company_name && <Typography>{row.original.companies.company_name}</Typography>
+      columnHelper.accessor('Venue', {
+        header: 'Venue',
+        cell: ({ row }) => <Typography>{row.original.Venue}</Typography>
       }),
-      columnHelper.accessor('email', {
-        header: 'Email',
-        cell: ({ row }) => <Typography>{row.original.email}</Typography>
+      columnHelper.accessor('Address', {
+        header: 'Address',
+        cell: ({ row }) => <Typography>{row.original.Address}</Typography>
       }),
-      columnHelper.accessor('phone', {
-        header: 'Phone',
-        cell: ({ row }) => <Typography>{row.original.phone}</Typography>
+      columnHelper.accessor('Username', {
+        header: 'Username',
+        cell: ({ row }) => <Typography>{row.original.Username}</Typography>
       }),
-      columnHelper.accessor('status', {
-        header: 'Status',
-        cell: ({ row }) => <div className='text-center'>
-          {
-            row.original.status === 'Active' ?
-              <><Badge variant='dot' color='success' /></> :
-              <><Badge variant='dot' color='warning' /></>
-          }
-        </div>
+      columnHelper.accessor('StartTime', {
+        header: 'Start Time',
+        cell: ({ row }) => <Typography>{new Date(row.original.StartTime).toLocaleString()}</Typography>
       }),
-      columnHelper.accessor('spent', {
-        header: 'Assign',
-        cell: ({ row }) => <Typography>
-         0
-        </Typography>
+      columnHelper.accessor('EndTime', {
+        header: 'End Time',
+        cell: ({ row }) => <Typography>{new Date(row.original.EndTime).toLocaleString()}</Typography>
       }),
       columnHelper.accessor('action', {
         header: 'Action',
@@ -259,6 +252,8 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   text: 'View',
                   menuItemProps: {
                     onClick: () => {
+                      // Implement View action
+                      detailRef.current?.open(row.original.Id)
                     },
                     className: 'flex items-center gap-2'
                   }
@@ -267,6 +262,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   text: 'Edit',
                   menuItemProps: {
                     onClick: () => {
+                      // Implement Edit action
                     },
                     className: 'flex items-center gap-2'
                   }
@@ -275,7 +271,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   text: 'Deactive',
                   menuItemProps: {
                     onClick: () => {
-                      DeactiveAction(row.original.auth_id)
+                      DeactiveAction(row.original.Id); // Use Id from new data
                     },
                     className: 'flex items-center gap-2'
                   }
@@ -296,6 +292,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [searchData]
   )
+
 
   const table = useReactTable({
     data: searchData as any,
@@ -435,6 +432,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
           }}
         />
       </Card>
+      <DetailView ref={detailRef} refresh={fetchData} />
     </>
   )
 })

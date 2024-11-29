@@ -10,6 +10,7 @@
 import { responsiveFontSizes } from '@mui/material';
 import { NextResponse } from 'next/server'
 import { Pool } from 'pg';
+export const dynamic = 'force-dynamic';
 
 
 const pool = new Pool({
@@ -24,27 +25,44 @@ export async function GET(req: Request) {
   try {
     // Parse URL parameters
     const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('id'); // User ID to fetch a single record
     const search = searchParams.get('search') || ''; // Search query
     const type = searchParams.get('type') || ''; // Type filter
-    var page = parseInt(searchParams.get('page') || '0', 10); // Page number
-
-    if(page == 0){
-      page = 1
-      console.log("true");
-    }
+    const page = parseInt(searchParams.get('page') || '1', 10); // Page number
     const size = parseInt(searchParams.get('size') || '10', 10); // Page size
-    // Validate page and size
+
+    // Handle fetching a single record if `id` is provided
+    if (userId) {
+      console.log('Fetching user with ID:', userId);
+
+      // Query the database using the custom function
+      const query = `SELECT * FROM public.admin_getoneprofile($1)`;
+      const values = [userId];
+      const result = await pool.query(query, values);
+
+      // Check if a record is found
+      if (result.rows.length === 0) {
+        return NextResponse.json(
+          { error: `No user found with ID ${userId}` },
+          { status: 404 }
+        );
+      }
+
+      console.log('User fetched:', result.rows[0]);
+      return NextResponse.json({ user: result.rows[0] });
+    }
+
+    // Handle fetching multiple records if `id` is not provided
     if (page < 1 || size < 1) {
       return NextResponse.json(
         { error: 'Invalid pagination parameters. Page and size must be greater than 0.' },
         { status: 400 }
       );
     }
+
     const offset = (page - 1) * size;
+    console.log('Fetching all users:', { search, type, page, size, offset });
 
-    console.log('Parsed parameters:', { search, type, page, size, offset });
-
-    // Start building query dynamically
     let query = `SELECT * FROM public.admin_getalldata()`;
     const conditions: string[] = [];
     const values: any[] = [];
@@ -61,36 +79,64 @@ export async function GET(req: Request) {
     if (conditions.length > 0) {
       query += ` WHERE ` + conditions.join(' AND ');
     }
-     
-    // Add pagination
+
     query += ` OFFSET $${values.length + 1} LIMIT $${values.length + 2}`;
     values.push(offset, size);
 
-    console.log('Generated query:', query);
-    console.log('Query values:', values);
-
-    // Execute query for profiles
     const profilesResult = await pool.query(query, values);
 
-    // Query total count for pagination metadata
     const countQuery = `SELECT COUNT(*) AS total FROM public.admin_getalldata()`;
     const countResult = await pool.query(countQuery);
     const totalCount = parseInt(countResult.rows[0]?.total, 10) || 0;
 
-    console.log('Profiles fetched:', profilesResult.rows);
-    console.log('Total count:', totalCount);
-
-    // Construct response
-    const responseData = {
-      totalCount,          // Total count of records
-      currentPage: page,   // Current page number
-      totalPages: Math.ceil(totalCount / size), // Total number of pages
-      profiles: profilesResult.rows // Fetched user profiles
-    };
-
-    return NextResponse.json(responseData);
+    return NextResponse.json({
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / size),
+      profiles: profilesResult.rows,
+    });
   } catch (error) {
     console.error('Database query failed:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+
+export async function DELETE(req: Request) {
+  try {
+    // Parse URL parameters
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('id'); // User ID to delete
+    console.log(userId);
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required for deletion.' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`Deleting user with ID: ${userId}`);
+
+    // Call the admin_delete_profile function to delete the user
+    const deleteQuery = `SELECT * FROM public.admin_delete_profile($1)`;
+    const result = await pool.query(deleteQuery, [userId]);
+
+    if (result.rowCount === 0) {
+      return NextResponse.json(
+        { error: `No user found with ID ${userId}` },
+        { status: 404 }
+      );
+    }
+
+    console.log(`User with ID ${userId} deleted successfully.`);
+    return NextResponse.json(
+      { message: `User with ID ${userId} deleted successfully.` },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Failed to delete user:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+

@@ -84,37 +84,46 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   }))
 
   const fetchData = async (userId: string) => {
-    setLoading(true)
+    console.log(userId, "======userId in view");
+    setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('advertisers')
-        .select(`*,
-        companies (*)
-        `)
-        .eq('advertiser_id', userId)
-        .single()
+      // Fetch advertiser data using the custom API
+      const response = await fetch(`/api/admin/user?id=${userId}`);
+      if (!response.ok) {
+        console.error('Failed to fetch advertiser data:', response.statusText);
+        setAdvertiser(null);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      if (error) throw error
+      const { user: advertiserData } = await response.json();
+      if (!advertiserData) {
+        console.error('Advertiser not found');
+        setAdvertiser(null);
+      } else {
+        console.log(advertiserData, "=========advertiser data");
+        setAdvertiser(advertiserData);
+      }
 
-      setAdvertiser(data)
+      // Fetch contracts related to the advertiser
+      const contractsResponse = await fetch(`/api/admin/contracts?advertiser_id=${userId}`);
+      if (!contractsResponse.ok) {
+        console.error('Failed to fetch contract data:', contractsResponse.statusText);
+        throw new Error(`HTTP error! status: ${contractsResponse.status}`);
+      }
 
-      const { data: contractData, error: contractError } = await supabase
-        .from('contracts')
-        .select(`*,
-        offers (*)`)
-        .eq('advertiser_id', data.advertiser_id)
-
-      if (contractError) throw contractError
-
-      setContract(contractData)
+      const contractData = await contractsResponse.json();
+      console.log(contractData, "=========contract data");
+      setContract(contractData);
 
     } catch (error: any) {
-      console.log(error.message);
+      console.error('Error fetching data:', error.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+
 
 
   const DateDifference = (createDate: string) => {
@@ -203,7 +212,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                       <i className="ri-bank-card-line h-5 w-5 text-muted-foreground" />
                       <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
                         <span className="text-sm text-muted-foreground">
-                          
+
                         </span>
                       </div>
                     </div> */}
@@ -268,140 +277,79 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
 
   return (
     <>
-      <Dialog
-        open={open}
-        scroll="paper"
-        onClose={() => {
-          setAdvertiser(undefined)
-          setContract(undefined)
-          setOpen(false)
-        }}
-        maxWidth='lg'
-        fullWidth
-        aria-labelledby='max-width-dialog-title'>
-        <Grid container
-          className="scrollbar-custom overflow-y-auto"
-        >
-          <Grid item lg={4.5} md={12} spacing={6}>
-            {advertiser && (
-              <CardContent className='flex flex-col pbs-12 gap-6'>
-                <Grid container spacing={3}>
-                  <Grid item lg={12} md={5} xs={12}
-                    className={classNames({
-                      '[&:not(:last-child)>div]:border-ie': isMdScreen
-                    })}
-                  >
-                    <div className='flex flex-col gap-6'>
-                      <div className='flex items-center justify-center flex-col gap-4'>
-                        <div className='flex flex-col items-center gap-4'>
-                          <CustomAvatar alt='user-profile' src='/images/avatars/1.png' variant='rounded' size={120} />
-                          <Typography variant='h5'>{`${advertiser.first_name} ${advertiser.last_name}`}</Typography>
-                        </div>
-                        <Chip label='Advertiser' color='error' size='small' variant='tonal' />
-                      </div>
-                      <div className='flex items-center justify-around flex-wrap gap-4'>
-                        <div className='flex items-center gap-4'>
-                          <CustomAvatar variant='rounded' color='primary' skin='light'>
-                            <i className="ri-money-dollar-circle-line"></i>
-                          </CustomAvatar>
-                          <div>
-                            <Typography variant='h5'>123k</Typography>
-                            <Typography>Revenue</Typography>
-                          </div>
-                        </div>
-                        <div className='flex items-center gap-4'>
-                          <CustomAvatar variant='rounded' color='primary' skin='light'>
-                            <i className='ri-star-smile-line' />
-                          </CustomAvatar>
-                          <div>
-                            <Typography variant='h5'>568</Typography>
-                            <Typography>Lead Generate</Typography>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Grid>
+     <Dialog
+  open={open}
+  scroll="paper"
+  onClose={() => {
+    setAdvertiser(undefined)
+    setContract(undefined)
+    setOpen(false)
+  }}
+  maxWidth='sm'
+  fullWidth
+  aria-labelledby='max-width-dialog-title'>
+  <Grid container className="scrollbar-custom overflow-y-auto p-4">
+    <Grid item lg={12} md={12}>
+      {advertiser && (
+        <CardContent className='flex flex-col gap-6'>
+          <Grid container spacing={4}>
+            {/* Left side: Avatar and basic info */}
+            <Grid item lg={5} md={5} xs={12} className="flex flex-col items-center">
+              <div className='flex flex-col gap-6'>
+                <CustomAvatar
+                  alt='user-profile'
+                  src={advertiser?.Avatar || '/images/avatars/default.png'}
+                  variant='rounded'
+                  size={120}
+                />
+                <Typography variant='h5' className='font-semibold'>{advertiser?.Username}</Typography>
+                <Typography variant='subtitle1' color="text.secondary">{advertiser?.Title}</Typography>
+                <Chip label={advertiser?.AccountType} color='primary' size='small' variant='tonal' />
+              </div>
+            </Grid>
 
-                  <Grid item lg={12} md={6.5} xs={12} >
-                    <div>
-                      <div className='flex flex-col justify-around flex-wrap gap-2 px-7 my-auto'>
-                        <Typography variant='h5' className="mt-1">Details</Typography>
-                        {(isSmScreen || isLgScreen && !isMdScreen) && <Divider className='mb-2' />}
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Username:
-                          </Typography>
-                          <Typography>{`${advertiser.first_name} ${advertiser.last_name}`}</Typography>
-                        </div>
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Email:
-                          </Typography>
-                          <Typography>{advertiser.email}</Typography>
-                        </div>
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Phone:
-                          </Typography>
-                          <Typography>{advertiser.phone}</Typography>
-                        </div>
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Status:
-                          </Typography>
-                          <Typography >{advertiser.status}</Typography>
-                        </div>
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Company:
-                          </Typography>
-                          <Typography >{advertiser.companies.company_name}</Typography>
-                        </div>
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Address:
-                          </Typography>
-                          <Typography >{advertiser.companies.company_address}</Typography>
-                        </div>
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Contact:
-                          </Typography>
-                          <Typography >{advertiser.companies.company_phone}</Typography>
-                        </div>
-                        <div className='flex items-center flex-wrap gap-x-1.5'>
-                          <Typography className='font-medium' color='text.primary'>
-                            Country:
-                          </Typography>
-                          <Typography >{advertiser.companies.company_url}</Typography>
-                        </div>
-                      </div>
-                    </div>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            )}
-          </Grid >
-          <Grid item lg={7.5} md={12}>
-            <div className='flex flex-col h-full p-6'>
-              {loading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <Commet color="#3bcde4" size="medium" text="" textColor="" />
-                </div>
-              ) :
-                <div>
+            {/* Right side: Detailed information */}
+            <Grid item lg={7} md={7} xs={12}>
+              <div className='flex flex-col gap-4'>
+                <Typography variant='h5' className='font-semibold'>Details</Typography>
+                <Divider className='mb-4' />
 
-                  <Typography variant='h5' className="mb-4">
-                    Contracts ({Array.isArray(contract) ? contract.length : 0})
+                <div className='flex items-center gap-4'>
+                  <Typography className='font-medium' color='text.primary'>
+                    Username:
                   </Typography>
-
-                  {contract !== undefined ? contractList : null}
+                  <Typography>{advertiser?.Username}</Typography>
                 </div>
-              }
-            </div>
+
+                <div className='flex items-center gap-4'>
+                  <Typography className='font-medium' color='text.primary'>
+                    Account Type:
+                  </Typography>
+                  <Typography>{advertiser?.AccountType}</Typography>
+                </div>
+
+                <div className='flex items-center gap-4'>
+                  <Typography className='font-medium' color='text.primary'>
+                    Price:
+                  </Typography>
+                  <Typography>{advertiser?.Price}</Typography>
+                </div>
+
+                <div className='flex items-center gap-4'>
+                  <Typography className='font-medium' color='text.primary'>
+                    Created At:
+                  </Typography>
+                  <Typography>{new Date(advertiser?.CreatedAt).toLocaleString()}</Typography>
+                </div>
+              </div>
+            </Grid>
           </Grid>
-        </Grid >
-      </Dialog >
+        </CardContent>
+      )}
+    </Grid>
+  </Grid>
+</Dialog>
+
     </>
   )
 })
