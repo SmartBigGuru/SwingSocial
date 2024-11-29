@@ -32,7 +32,7 @@ const TableFilters = (props: RefreshProps) => {
 
   // States
   const [size, setSize] = useState(searchParams.get('size') ?? '10');
-  const [pageIndex, setPageIndex] = useState(searchParams.get('page') ?? '0');
+  const [pageIndex, setPageIndex] = useState(searchParams.get('page') ?? '1');
   const [type, setType] = useState<SearchDataFormat['type']>('')
   const [searchString, setSearchString] = useState<SearchDataFormat['search']>('')
 
@@ -59,7 +59,7 @@ const TableFilters = (props: RefreshProps) => {
     setType(searchParams.get('type') || '')
     setSearchString(searchParams.get('search') || '')
     setSize(searchParams.get('size') ?? '10')
-    setPageIndex(searchParams.get('page') ?? '0')
+    setPageIndex(searchParams.get('page') ?? '1')
   }, [searchParams])
 
   useEffect(() => {

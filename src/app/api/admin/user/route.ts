@@ -22,60 +22,73 @@ const pool = new Pool({
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);    
+    // Parse URL parameters
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search') || ''; // Search query
+    const type = searchParams.get('type') || ''; // Type filter
+    var page = parseInt(searchParams.get('page') || '1', 10); // Page number
 
-    const search = searchParams.get('search') || '';
-    const type = searchParams.get('type') || '';
-    const page = searchParams.get('page') || '';
-    const size = searchParams.get('size') || '';
-    var countResult = null;
-
-    console.log(searchParams)
-    console.log(search)
-    
-
-    if (search === '')
-    {
-      console.log("get all data");
-      countResult = await pool.query(`SELECT * FROM public.admin_getalldata()`);
+    if(page == 0){
+      page = 1
+      console.log("true");
     }
-    else {
-      console.log("get filtered data");
-      countResult = await pool.query(`SELECT * FROM public.admin_userprofilematch($1)`, [search]);
+    const size = parseInt(searchParams.get('size') || '10', 10); // Page size
+    // Validate page and size
+    if (page < 1 || size < 1) {
+      return NextResponse.json(
+        { error: 'Invalid pagination parameters. Page and size must be greater than 0.' },
+        { status: 400 }
+      );
     }
-  
-    console.log(countResult.rows.length)
+    const offset = (page - 1) * size;
 
-    // const totalCount = countResult.rows[0].total;
+    console.log('Parsed parameters:', { search, type, page, size, offset });
 
-    // //let query = 'SELECT "Title", "Username", "Avatar", "About", "AccountType", "Gender" FROM "azure"."UserProfiles" WHERE TRUE';
-    // let query = "select * From public.admin_getalldata()"
-    // const conditions: string[] = [];
-    // const values: any[] = [];
-    // if (search) {
-    //   conditions.push(`"Username" ILIKE $${values.length + 1}`); // Case-insensitive search
-    //   values.push(`%${search}%`); // Use wildcards for partial matches
-    // }
-    // if (type) {
-    //   conditions.push(`"AccountType" = $${values.length + 1}`);
-    //   values.push(type);
-    // }
+    // Start building query dynamically
+    let query = `SELECT * FROM public.admin_getalldata()`;
+    const conditions: string[] = [];
+    const values: any[] = [];
 
-    // if (conditions.length > 0) {
-    //   query += ' AND ' + conditions.join(' AND ');
-    // }
+    if (search) {
+      conditions.push(`"Username" ILIKE $${values.length + 1}`);
+      values.push(`%${search}%`);
+    }
+    if (type) {
+      conditions.push(`"AccountType" = $${values.length + 1}`);
+      values.push(type);
+    }
 
-    // query += ` OFFSET $${values.length + 1} LIMIT $${values.length + 2}`;
-    // values.push((Number(size)*Number(page)), Number(size));
+    if (conditions.length > 0) {
+      query += ` WHERE ` + conditions.join(' AND ');
+    }
+     
+    // Add pagination
+    query += ` OFFSET $${values.length + 1} LIMIT $${values.length + 2}`;
+    values.push(offset, size);
 
-    // const profilesResult = await pool.query(query, values);
-    // const responseData = {
-    //   totalCount,          // Total count of records
-    //   profiles: profilesResult.rows // Fetched user profiles
-    // };
-    
+    console.log('Generated query:', query);
+    console.log('Query values:', values);
 
-     return NextResponse.json(countResult.rows);
+    // Execute query for profiles
+    const profilesResult = await pool.query(query, values);
+
+    // Query total count for pagination metadata
+    const countQuery = `SELECT COUNT(*) AS total FROM public.admin_getalldata()`;
+    const countResult = await pool.query(countQuery);
+    const totalCount = parseInt(countResult.rows[0]?.total, 10) || 0;
+
+    console.log('Profiles fetched:', profilesResult.rows);
+    console.log('Total count:', totalCount);
+
+    // Construct response
+    const responseData = {
+      totalCount,          // Total count of records
+      currentPage: page,   // Current page number
+      totalPages: Math.ceil(totalCount / size), // Total number of pages
+      profiles: profilesResult.rows // Fetched user profiles
+    };
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Database query failed:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
