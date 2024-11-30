@@ -23,7 +23,6 @@ const pool = new Pool({
 });
 
 
-
 // Fetch events (all or single)
 export async function GET(req: Request) {
   try {
