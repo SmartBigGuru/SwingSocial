@@ -21,6 +21,7 @@ const pool = new Pool({
   port: 5432,
 });
 
+
 export async function GET(req: Request) {
   try {
     // Parse URL parameters
