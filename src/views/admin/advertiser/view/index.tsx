@@ -44,6 +44,12 @@ interface AdvertiserType {
   phone: string;
   status: string;
   companies: CompanyType;
+  CreatedAt:string;
+  Price:string;
+  AccountType:string;
+  Username:string;
+  Avatar:string;
+  Title:string;
 }
 
 interface OfferType {
@@ -92,14 +98,14 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       const response = await fetch(`/api/admin/user?id=${userId}`);
       if (!response.ok) {
         console.error('Failed to fetch advertiser data:', response.statusText);
-        setAdvertiser(null);
+        setAdvertiser(undefined);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const { user: advertiserData } = await response.json();
       if (!advertiserData) {
         console.error('Advertiser not found');
-        setAdvertiser(null);
+        setAdvertiser(undefined);
       } else {
         console.log(advertiserData, "=========advertiser data");
         setAdvertiser(advertiserData);
