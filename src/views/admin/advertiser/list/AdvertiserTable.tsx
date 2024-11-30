@@ -57,7 +57,8 @@ interface UserType {
 }
 
 type TableAction = UserType & {
-  action?: string
+  action?: string;
+  Id:string;
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {

@@ -49,7 +49,15 @@ interface PartnerType {
 }
 
 type TableAction = PartnerType & {
-  action?: string
+  action?: string;
+  Id:string;
+  Name:string;
+  EndTime:string;
+  StartTime:string;
+  Username:string;
+  Address:string;
+  Venue:string;
+  Category:string;
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {

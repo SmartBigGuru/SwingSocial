@@ -22,7 +22,6 @@ const pool = new Pool({
 });
 
 // Fetch events (all or single)
-// Fetch events (all or single)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -39,25 +38,47 @@ export async function GET(req: Request) {
     if (eventId) {
       console.log('Fetching event with ID:', eventId);
 
-      // Query the database using the single event function
-      const query = `SELECT * FROM public.event_get_details($1)`;
-      const values = [eventId];
-      const result = await pool.query(query, values);
+      // Query the database for event details
+      const eventQuery = `SELECT * FROM public.event_get_details($1)`;
+      const eventValues = [eventId];
+      const eventResult = await pool.query(eventQuery, eventValues);
 
-      if (result.rows.length === 0) {
+      if (eventResult.rows.length === 0) {
         return NextResponse.json(
           { error: `No event found with ID ${eventId}` },
           { status: 404 }
         );
       }
 
-      console.log('Event fetched:', result.rows[0]);
-      return NextResponse.json({ event: result.rows[0] });
+      const event = eventResult.rows[0];
+      console.log('Event fetched:', event);
+
+      // Fetch RSVP, attendees, and tickets data
+      const rsvpQuery = `SELECT * FROM event_rsvp_attendees($1, 'rsvp')`;
+      const attendeesQuery = `SELECT * FROM event_rsvp_attendees($1, 'attendees')`;
+      const ticketsQuery = `SELECT * FROM get_event_ticket_packages($1)`;
+
+      const [rsvpResult, attendeesResult, ticketsResult] = await Promise.all([
+        pool.query(rsvpQuery, [eventId]),
+        pool.query(attendeesQuery, [eventId]),
+        pool.query(ticketsQuery, [eventId]),
+      ]);
+
+      const rsvp = rsvpResult.rows;
+      const attendees = attendeesResult.rows;
+      const tickets = ticketsResult.rows;
+
+      return NextResponse.json({
+        event,
+        rsvp,
+        attendees,
+        tickets,
+      });
     }
 
     // Validate pagination params
-    if(sPage == 0){
-      sPage = 1
+    if (sPage == 0) {
+      sPage = 1;
     }
     if (sPage < 1 || sSize < 1) {
       return NextResponse.json(
@@ -114,6 +135,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
 
 // Delete an event
 export async function DELETE(req: Request) {
