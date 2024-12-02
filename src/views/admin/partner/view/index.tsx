@@ -546,7 +546,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
             value={selectedProfile}
             onChange={(e) => setSelectedProfile(e.target.value)}
           >
-            {userProfiles?.length > 0 && userProfiles.map((profile) => (
+            {userProfiles?.length > 0 && userProfiles.map((profile:any) => (
               <MenuItem key={profile.ProfileId} value={profile.ProfileId}>
                 {profile.Username} {/* Replace with the appropriate display field */}
               </MenuItem>
@@ -604,7 +604,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
             value={selectedProfile}
             onChange={(e) => setSelectedProfile(e.target.value)}
           >
-            {userProfiles?.length > 0 && userProfiles.map((profile) => (
+            {userProfiles?.length > 0 && userProfiles.map((profile:any) => (
               <MenuItem key={profile.ProfileId} value={profile.ProfileId}>
                 {profile.Username} {/* Replace with the appropriate display field */}
               </MenuItem>

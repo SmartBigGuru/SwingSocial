@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Card from '@mui/material/Card'
 import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
 import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
-import { CardHeader, Skeleton, TablePagination, Typography, Button, IconButton, Chip } from '@mui/material'
+import { CardHeader, Skeleton, TablePagination, Typography, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
 import classNames from 'classnames'
 
 import { toast } from 'react-toastify'
@@ -24,7 +24,12 @@ import OptionMenu from '@/@core/components/option-menu'
 import Link from '@/components/Link'
 import Swal from 'sweetalert2';
 
+import { Email } from '@mui/icons-material';
+import dynamic from 'next/dynamic';
 
+// Dynamically import a rich-text editor (like React Quill)
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
 const colors = [
   'rgba(255, 99, 132, 0.1)',
   'rgba(54, 162, 235, 0.1)',
@@ -58,7 +63,7 @@ interface UserType {
 
 type TableAction = UserType & {
   action?: string;
-  Id:string;
+  Id: string;
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -84,20 +89,33 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [size, setSize] = useState(Number(searchParams.get('size') ?? 10));
   const [totalCount, setTotalCount] = useState(0);
-  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 1));
+  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 0));
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const [type, setType] = useState(searchParams.get('type') ?? '')
   const router = useRouter()
   const editRef = useRef<EditDialogHandle>(null)
   const detailRef = useRef<DetailViewHandle>(null)
+  const [openDialog, setOpenDialog] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
 
-  useEffect(() => {
-    if(pageIndex==0 ){
-      setPageIndex(1)
-    }
-  }, [pageIndex]);
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
 
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEmailSubject('');
+    setEmailBody('');
+  };
+
+  const handleSendEmail = () => {
+    console.log('Email Subject:', emailSubject);
+    console.log('Email Body:', emailBody);
+    // Add API call here to send the email
+    handleCloseDialog();
+  };
   useImperativeHandle(ref, () => ({
     refresh: () => {
       fetchData();
@@ -160,6 +178,104 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
     }
   }
 
+
+  async function upgradeUser(userId: string) {
+    try {
+      console.log(userId, "====userId");
+
+      // Confirm before upgrading
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to upgrade the user with ID ${userId}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, upgrade it!',
+        cancelButtonText: 'Cancel',
+      });
+
+      // If user confirms the upgrade
+      if (result.isConfirmed) {
+        const apiUrl = `/api/admin/user/upgrade`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST', // Specify the HTTP method
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ profileId: userId }), // Pass profileId in the request body
+        });
+
+        if (!response.ok) {
+          const errorResponse = await response.json();
+          throw new Error(errorResponse.error || `Failed to upgrade user with ID ${userId}`);
+        }
+
+        const responseData = await response.json();
+        console.log(responseData);
+
+        // Show success alert
+        await Swal.fire('Upgraded!', `User with ID ${userId} has been upgraded successfully.`, 'success');
+        fetchData()
+        // Optionally, refetch data to update the UI
+        // Example: fetchUsers(); // Call a function to refresh the user list
+      } else {
+        console.log('User upgrade cancelled.');
+      }
+    } catch (error: any) {
+      console.error('Error upgrading user:', error.message);
+      // Show error alert
+      await Swal.fire('Error!', `An error occurred: ${error.message}`, 'error');
+    }
+  }
+  async function downgradeUser(userId: string) {
+    try {
+      console.log(userId, "====userId");
+
+      // Confirm before upgrading
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to downgrade the user with ID ${userId}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, downgrade it!',
+        cancelButtonText: 'Cancel',
+      });
+
+      // If user confirms the downgrade
+      if (result.isConfirmed) {
+        const apiUrl = `/api/admin/user/downgrade`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST', // Specify the HTTP method
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ profileId: userId }), // Pass profileId in the request body
+        });
+
+        if (!response.ok) {
+          const errorResponse = await response.json();
+          throw new Error(errorResponse.error || `Failed to downgrade user with ID ${userId}`);
+        }
+
+        const responseData = await response.json();
+        console.log(responseData);
+
+        // Show success alert
+        await Swal.fire('Downgraded!', `User with ID ${userId} has been downgraded successfully.`, 'success');
+        fetchData();
+        // Optionally, refetch data to update the UI
+        // Example: fetchUsers(); // Call a function to refresh the user list
+      } else {
+        console.log('User downgrade cancelled.');
+      }
+    } catch (error: any) {
+      console.error('Error upgrading user:', error.message);
+      // Show error alert
+      await Swal.fire('Error!', `An error occurred: ${error.message}`, 'error');
+    }
+  }
+
   const fetchData = async () => {
     const sType = (searchParams.get('type') ?? '');
     const sSearch = (searchParams.get('search') ?? '');
@@ -172,8 +288,8 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
       if (sType) params.append('type', sType);
       if (sSearch) params.append('search', sSearch);
-      if(sPage==0){
-        sPage =1
+      if (sPage == 0) {
+        sPage = 1
       }
       params.append('page', sPage.toString());
       params.append('size', sSize.toString());
@@ -214,9 +330,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
   // Hooks
   useEffect(() => {
-    if(pageIndex==0){
-      setPageIndex(1)
-    }
+
     changeParam()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size, pageIndex, type, search])
@@ -228,7 +342,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
     setType(searchParams.get('type') ?? '');
     setSearch(searchParams.get('search') ?? '');
-    setPageIndex(Number(searchParams.get('page') ?? 1))
+    setPageIndex(Number(searchParams.get('page') ?? 0))
     setSize(Number(searchParams.get('size') ?? 10))
 
     return () => clearTimeout(debouncedFetch)
@@ -316,18 +430,14 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
               {
                 text: 'Upgrade',
                 menuItemProps: {
-                  onClick: () => {
-                    console.log("Clicked Upgrade");
-                  },
+                  onClick: () => upgradeUser(row?.original?.Id),
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'Downgrade',
                 menuItemProps: {
-                  onClick: () => {
-                    console.log("Clicked Downgrade");
-                  },
+                  onClick: () => downgradeUser(row?.original?.Id),
                   className: 'flex items-center gap-2'
                 }
               },
@@ -406,7 +516,15 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   return (
     <>
       <Card>
-        <CardHeader title='User Management Panel' />
+        <CardHeader title='User Management Panel' action={
+          <Button
+            variant="outlined"
+            startIcon={<Email />}
+            onClick={handleOpenDialog}
+          >
+            Send Email
+          </Button>
+        } />
         <div className='scrollbar-custom overflow-x-auto '>
           <table className={tableStyles.table}>
             <thead>
@@ -497,6 +615,34 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       </Card>
       <EditDialog refresh={fetchData} ref={editRef} />
       <DetailView ref={detailRef} refresh={fetchData} />
+      <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Send Email</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Subject"
+            variant="outlined"
+            value={emailSubject}
+            onChange={(e) => setEmailSubject(e.target.value)}
+            margin="normal"
+          />
+          <ReactQuill
+            theme="snow"
+            value={emailBody}
+            onChange={setEmailBody}
+            placeholder="Write your email here..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleSendEmail} variant="contained" color="primary">
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </>
   )
 })
