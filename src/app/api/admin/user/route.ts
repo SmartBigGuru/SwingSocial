@@ -21,7 +21,6 @@ const pool = new Pool({
 });
 
 
-
 export async function GET(req: Request) {
   try {
     // Parse URL parameters
