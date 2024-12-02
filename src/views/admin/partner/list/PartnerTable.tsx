@@ -88,8 +88,12 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const [status, setStatus] = useState(searchParams.get('status') ?? '')
   const [company, setCompany] = useState(searchParams.get('company') ?? '')
+
+  const [userProfiles, setUserProfiles] = useState([]); // User profiles state
+  const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
   const router = useRouter()
   const detailRef = useRef<DetailViewHandle>(null)
+
 
   useImperativeHandle(ref, () => ({
     refresh: () => {
