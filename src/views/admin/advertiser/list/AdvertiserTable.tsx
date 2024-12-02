@@ -55,6 +55,7 @@ declare module '@tanstack/table-core' {
 interface UserType {
   Avatar: string;
   Username: string;
+  Email:string;
   AccountType: string;
   Title: string;
   Price: string;
@@ -395,6 +396,10 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           )
         }
       },
+      columnHelper.accessor('Email', {
+        header: 'Email',
+        cell: ({ row }) => row.original.Email && <Typography>{row.original.Email}</Typography>
+      }),
       columnHelper.accessor('Username', {
         header: 'Username',
         cell: ({ row }) => row.original.Username && <Typography>{row.original.Username}</Typography>
@@ -406,7 +411,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       columnHelper.accessor('Title', {
         header: 'Subscription Status',
         cell: ({ row }) => (row.original.Title === "Free Member") ? <div><Chip label={`${row.original.Title} ${row.original.Price}$`} color='primary' variant='outlined' /></div> :
-          <div><Chip label={`${row.original.Title} ${row.original.Price}$`} color='success' variant='outlined'></Chip></div>
+          <div><Chip label={`${row.original.Title} $${row.original.Price}`} color='success' variant='outlined'></Chip></div>
       }),
       columnHelper.accessor('CreatedAt', {
         header: 'Created Date',

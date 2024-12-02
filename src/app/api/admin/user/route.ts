@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('id'); // User ID to fetch a single record
     const search = searchParams.get('search') || ''; // Search query
-    const type = searchParams.get('type') || ''; // Type filter
+    const type = searchParams.get('type') || 'Email'; // Type filter (Email or Username)
     const page = parseInt(searchParams.get('page') || '1', 10); // Page number
     const size = parseInt(searchParams.get('size') || '10', 10); // Page size
 
@@ -35,12 +35,10 @@ export async function GET(req: Request) {
     if (userId) {
       console.log('Fetching user with ID:', userId);
 
-      // Query the database using the custom function
       const query = `SELECT * FROM public.admin_getoneprofile($1)`;
       const values = [userId];
       const result = await pool.query(query, values);
 
-      // Check if a record is found
       if (result.rows.length === 0) {
         return NextResponse.json(
           { error: `No user found with ID ${userId}` },
@@ -52,7 +50,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ user: result.rows[0] });
     }
 
-    // Handle fetching multiple records if `id` is not provided
+    // Validate pagination parameters
     if (page < 1 || size < 1) {
       return NextResponse.json(
         { error: 'Invalid pagination parameters. Page and size must be greater than 0.' },
@@ -67,13 +65,16 @@ export async function GET(req: Request) {
     const conditions: string[] = [];
     const values: any[] = [];
 
-    if (search) {
+    // Add search filter based on type
+    if (search && type === 'Email') {
+      conditions.push(`"Email" ILIKE $${values.length + 1}`);
+      values.push(`%${search}%`);
+    } else if (search && type === 'Username') {
       conditions.push(`"Username" ILIKE $${values.length + 1}`);
       values.push(`%${search}%`);
-    }
-    if (type) {
-      conditions.push(`"AccountType" = $${values.length + 1}`);
-      values.push(type);
+    }else{
+      conditions.push(`"Email" ILIKE $${values.length + 1}`);
+      values.push(`%${search}%`);
     }
 
     if (conditions.length > 0) {
@@ -86,7 +87,23 @@ export async function GET(req: Request) {
     const profilesResult = await pool.query(query, values);
 
     const countQuery = `SELECT COUNT(*) AS total FROM public.admin_getalldata()`;
-    const countResult = await pool.query(countQuery);
+    const countConditions: string[] = [];
+
+    // Add conditions to the count query
+    if (search && type === 'Email') {
+      countConditions.push(`"Email" ILIKE $1`);
+    } else if (search && type === 'Username') {
+      countConditions.push(`"Username" ILIKE $1`);
+    }
+
+    const countQueryFinal =
+      countConditions.length > 0
+        ? `${countQuery} WHERE ${countConditions.join(' AND ')}`
+        : countQuery;
+
+    const countValues = search ? [`%${search}%`] : [];
+    const countResult = await pool.query(countQueryFinal, countValues);
+
     const totalCount = parseInt(countResult.rows[0]?.total, 10) || 0;
 
     return NextResponse.json({
@@ -100,6 +117,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
 
 
 export async function DELETE(req: Request) {

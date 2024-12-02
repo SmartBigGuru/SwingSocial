@@ -74,28 +74,28 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         icon={<i className='ri-home-smile-line' />}
         activeUrl='/admin/qa/dashboard'
       >
-        DashBoard
+        Reports
       </MenuItem>
       <MenuItem href={(`/admin/qa/user-manage`)}
         icon={<i className='ri-shield-user-line' />}
         exactMatch={false}
         activeUrl='/admin/qa/user-manage'
       >
-        Admin Manage
+        Admin Manager
       </MenuItem>
       <MenuItem href={(`/admin/qa/advertiser-manage`)}
         icon={<i className='ri-account-circle-line' />}
         exactMatch={false}
         activeUrl='/admin/qa/advertiser-manage'
       >
-        Profile Manage
+        Profile Manager
       </MenuItem>
       <MenuItem href={(`/admin/qa/partner-manage`)}
         icon={<i className='ri-calendar-event-line' />}
         exactMatch={false}
         activeUrl='/admin/qa/partner-manage'
       >
-        Event Manage
+        Event Manager
       </MenuItem>
     </>
   )
@@ -107,7 +107,7 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         exactMatch={false}
         activeUrl='/admin/sp/dashboard'
       >
-        DashBoard
+        Reports
       </MenuItem>
 
       <MenuItem href={(`/admin/sp/user-manage`)}
@@ -115,23 +115,23 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         exactMatch={false}
         activeUrl='/admin/sp/user-manage'
       >
-        Admin Manage
+        Admin Manager
       </MenuItem>
       <MenuItem href={(`/admin/sp/advertiser-manage`)}
         icon={<i className='ri-account-circle-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/advertiser-manage'
       >
-        Profile Manage
+        Profile Manager
       </MenuItem>
       <MenuItem href={(`/admin/sp/partner-manage`)}
         icon={<i className='ri-calendar-event-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/partner-manage'
       >
-        Event Manage
+        Event Manager
       </MenuItem>
-      <MenuItem href={(`/admin/sp/vertical`)}
+      {/* <MenuItem href={(`/admin/sp/vertical`)}
         icon={<i className='ri-archive-stack-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/vertical'
@@ -151,8 +151,8 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         activeUrl='/admin/sp/invoice'
       >
         Invoice
-      </MenuItem>
-      <SubMenu label='System Setting' icon={<i className='ri-settings-2-line' />}>
+      </MenuItem> */}
+      {/* <SubMenu label='System Setting' icon={<i className='ri-settings-2-line' />}>
         <MenuItem>
           Integration
         </MenuItem>
@@ -165,15 +165,15 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         <MenuItem>
           Security
         </MenuItem>
-      </SubMenu>
-      <Divider>Other</Divider>
+      </SubMenu> */}
+      {/* <Divider>Other</Divider>
       <MenuItem href={(`/admin/sp/qa`)}
         icon={<i className='ri-question-answer-line ' />}
         exactMatch={false}
         activeUrl='/admin/sp/qa'
       >
         Q & A
-      </MenuItem>
+      </MenuItem> */}
     </>
   )
 

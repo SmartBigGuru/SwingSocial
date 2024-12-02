@@ -106,9 +106,8 @@ const TableFilters = (props: RefreshProps) => {
               inputProps={{ placeholder: 'Select Role' }}
             >
               <MenuItem value=''>Select Type</MenuItem>
-              <MenuItem value='Couple'>Couple</MenuItem>
-              <MenuItem value='Couple (M/F)'>Couple (M/F)</MenuItem>
-              <MenuItem value='Woman'>Woman</MenuItem>
+              <MenuItem value='Email'>Email</MenuItem>
+              <MenuItem value='Username'>Username</MenuItem>
             </Select>
           </FormControl>
         </Grid>

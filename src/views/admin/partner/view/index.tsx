@@ -1,7 +1,7 @@
 'use client'
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
-import { CardContent,Card, Chip, Dialog, Divider, Grid, Typography, useMediaQuery, Button, FormControl, Select, MenuItem, InputLabel } from "@mui/material";
+import { CardContent,Card, Chip, Dialog, Divider, Grid, Typography, useMediaQuery, Button, FormControl, Select, MenuItem, InputLabel, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Email, Delete, FileDownload } from "@mui/icons-material";
 import type { Theme } from "@mui/material/styles/createTheme";
@@ -10,6 +10,12 @@ import Close from "@/@menu/svg/Close";
 import * as Papa from 'papaparse';
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+
+import dynamic from 'next/dynamic';
+
+// Dynamically import a rich-text editor (like React Quill)
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
 export interface DetailViewHandle {
   open: (id: string) => void;
 }
@@ -81,6 +87,28 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const [userProfiles, setUserProfiles] = useState([]); // User profiles state
   console.log(userProfiles,"=====userProfiles");
   const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
+
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEmailSubject('');
+    setEmailBody('');
+  };
+
+  const handleSendEmail = () => {
+    console.log('Email Subject:', emailSubject);
+    console.log('Email Body:', emailBody);
+    // Add API call here to send the email
+    handleCloseDialog();
+  };
   useImperativeHandle(ref, () => ({
     open: (id) => {
       setOpen(true)
@@ -148,14 +176,14 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     }
   };
 
-  const handleAddRSVP = async (profileId: string) => {
+  const handleAddRSVP = async (event: React.MouseEvent<HTMLButtonElement>) => {
     try {
       const response = await fetch(`/api/admin/events/rsvp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ eventId, profileId }),
+        body: JSON.stringify({ eventId, selectedProfile }),
       });
 
       if (!response.ok) {
@@ -166,7 +194,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       const newRSVP = await response.json();
 
       // Update the local state by adding the new RSVP
-      setRSVP(prevRSVP => [...prevRSVP, { ProfileId: profileId, ...newRSVP }]);
+      setRSVP(prevRSVP => [...prevRSVP, { ProfileId: selectedProfile, ...newRSVP }]);
       console.log('RSVP added successfully');
     } catch (error: any) {
       console.error('Error adding RSVP:', error.message);
@@ -276,7 +304,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       return;
     }
 
-    const doc = new jsPDF();
+    const doc:any = new jsPDF();
     const tableColumnHeaders = ["Profile ID", "Name", "Email", "Attendees Status"];
     const tableRows = attendees.map((entry) => [
       entry.ProfileId,
@@ -536,6 +564,14 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         >
                           Export PDF
                         </Button>
+
+                        <Button
+            variant="outlined"
+            startIcon={<Email />}
+            onClick={handleOpenDialog}
+          >
+            Send Email
+          </Button>
                       </div>
                       {/* Dropdown and Add Button */}
       <div className="flex gap-3 mb-4">
@@ -553,7 +589,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
             ))}
           </Select>
         </FormControl>
-        <Button variant="contained" color="primary" onClick={handleAddRSVP}>
+        <Button variant="contained" color="primary" onClick={(e)=>handleAddRSVP(e)}>
           Add RSVP
         </Button>
       </div>
@@ -595,6 +631,13 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         >
                           Export PDF
                         </Button>
+                        <Button
+            variant="outlined"
+            startIcon={<Email />}
+            onClick={handleOpenDialog}
+          >
+            Send Email
+          </Button>
                       </div>
                       <div className="flex gap-3 mb-4">
         <FormControl fullWidth>
@@ -611,8 +654,8 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
             ))}
           </Select>
         </FormControl>
-        <Button variant="contained" color="primary" onClick={handleAddRSVP}>
-          Add RSVP
+        <Button variant="contained" color="primary" onClick={(e)=>handleAddRSVP(e)}>
+          Add Attendees
         </Button>
       </div>
                       <DataGrid
@@ -637,6 +680,34 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
         </CardContent>
       )}
     </Grid>
+
+    <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Send Email</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Subject"
+            variant="outlined"
+            value={emailSubject}
+            onChange={(e) => setEmailSubject(e.target.value)}
+            margin="normal"
+          />
+          <ReactQuill
+            theme="snow"
+            value={emailBody}
+            onChange={setEmailBody}
+            placeholder="Write your email here..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleSendEmail} variant="contained" color="primary">
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
   </Grid>
 </Dialog>
 
