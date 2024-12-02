@@ -1,7 +1,7 @@
 'use client'
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
-import { CardContent,Card, Chip, Dialog, Divider, Grid, Typography, useMediaQuery, Button, FormControl, Select, MenuItem, InputLabel, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
+import { CardContent,Card, Chip, Dialog, Divider, Grid, Typography, useMediaQuery, Button, FormControl, Select, MenuItem, InputLabel, DialogTitle, DialogContent, TextField, DialogActions, Autocomplete, CircularProgress, AutocompleteInputChangeReason } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Email, Delete, FileDownload } from "@mui/icons-material";
 import type { Theme } from "@mui/material/styles/createTheme";
@@ -84,7 +84,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const isSmScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('sm'))
   const isMdScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('md'))
   const isLgScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'))
-  const [userProfiles, setUserProfiles] = useState([]); // User profiles state
+  const [userProfiles, setUserProfiles] = useState<any[]>([]); // User profiles state
   console.log(userProfiles,"=====userProfiles");
   const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
 
@@ -92,7 +92,8 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const [openDialog, setOpenDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
-
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
   const handleOpenDialog = () => {
     setOpenDialog(true);
   };
@@ -114,7 +115,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       setOpen(true)
       fetchData(id);
       setEventId(id)
-      fetchUserProfiles();
+      fetchUserProfiles(searchTerm, page);
     }
   }))
 
@@ -240,7 +241,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       return;
     }
 
-    const doc = new jsPDF();
+    const doc:any = new jsPDF();
     const tableColumnHeaders = ["Profile ID", "Name", "Email", "RSVP Status"];
     const tableRows = rsvp.map((entry) => [
       entry.ProfileId,
@@ -253,11 +254,11 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     doc.text("RSVP List", 14, 15);
 
     // Add table
-    doc.autoTable({
-      head: [tableColumnHeaders],
-      body: tableRows,
-      startY: 20,
-    });
+    // doc.autoTable({
+    //   head: [tableColumnHeaders],
+    //   body: tableRows,
+    //   startY: 20,
+    // });
 
     // Save the PDF
     doc.save("RSVP_List.pdf");
@@ -372,24 +373,60 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   ];
 
    // Fetch user profiles
-   const fetchUserProfiles = async () => {
+  // Function to fetch user profiles with search and pagination
+  const fetchUserProfiles = async (search: string, page: number) => {
     try {
-      const response = await fetch('/api/admin/user?page=1&size=100');
+      setLoading(true);
+      const response = await fetch(
+        `/api/admin/user?search=${search}&page=${page}&size=100&type=Username`
+      );
       if (!response.ok) {
         console.error('Failed to fetch user profiles:', response.statusText);
         return;
       }
-      const data = await response.json();
-      console.log(data);
-      setUserProfiles(data?.profiles);
+      const data:any = await response.json();
+      if (page === 1) {
+        setUserProfiles(data?.profiles || []);
+      } else {
+        // Append results for pagination
+        setUserProfiles((prevProfiles:any) => {
+          return [...prevProfiles, ...(data?.profiles || [])];
+        });
+      }
     } catch (error) {
       console.error('Error fetching user profiles:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+   // Handle input change for search
+   // Handle input change for search
+const handleSearchChange = (
+  event: React.SyntheticEvent,
+  value: string,
+  reason: AutocompleteInputChangeReason
+) => {
+  setSearchTerm(value); // Use the `value` parameter for the search term
+  setPage(1); // Reset to page 1 for new searches
+};
+
+
+  // Load more data when the dropdown is scrolled to the bottom
+  const handleScroll = (event: React.SyntheticEvent) => {
+    const listboxNode = event.currentTarget;
+    if (
+      listboxNode.scrollTop + listboxNode.clientHeight >=
+      listboxNode.scrollHeight
+    ) {
+      setPage((prevPage) => prevPage + 1);
+    }
+  };
+
   // Call this on component mount
   useEffect(() => {
-    fetchUserProfiles();
-  }, []);
+    fetchUserProfiles(searchTerm, page);
+  }, [searchTerm,page]);
 
 
   return (
@@ -577,17 +614,33 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       <div className="flex gap-3 mb-4">
         <FormControl fullWidth>
           <InputLabel id="user-profile-select-label">Select User Profile</InputLabel>
-          <Select
-            labelId="user-profile-select-label"
-            value={selectedProfile}
-            onChange={(e) => setSelectedProfile(e.target.value)}
-          >
-            {userProfiles?.length > 0 && userProfiles.map((profile:any) => (
-              <MenuItem key={profile.ProfileId} value={profile.ProfileId}>
-                {profile.Username} {/* Replace with the appropriate display field */}
-              </MenuItem>
-            ))}
-          </Select>
+          <Autocomplete
+  options={userProfiles}
+  getOptionLabel={(option: any) => option.Username || ''}
+  value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfile) || null}
+  onChange={(event, newValue) => setSelectedProfile(newValue?.ProfileId || null)}
+  onInputChange={handleSearchChange}
+  ListboxProps={{
+    onScroll: handleScroll, // Attach the scroll event handler
+  }}
+  loading={loading}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      label="Select User Profile"
+      InputProps={{
+        ...params.InputProps,
+        endAdornment: (
+          <>
+            {loading ? <CircularProgress color="inherit" size={20} /> : null}
+            {params.InputProps.endAdornment}
+          </>
+        ),
+      }}
+    />
+  )}
+/>
+
         </FormControl>
         <Button variant="contained" color="primary" onClick={(e)=>handleAddRSVP(e)}>
           Add RSVP
