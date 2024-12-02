@@ -85,9 +85,9 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const isMdScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('md'))
   const isLgScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'))
   const [userProfiles, setUserProfiles] = useState<any[]>([]); // User profiles state
-  console.log(userProfiles,"=====userProfiles");
   const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
 
+  console.log(selectedProfile,"=====userProfiles");
 
   const [openDialog, setOpenDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
@@ -613,7 +613,6 @@ const handleSearchChange = (
                       {/* Dropdown and Add Button */}
       <div className="flex gap-3 mb-4">
         <FormControl fullWidth>
-          <InputLabel id="user-profile-select-label">Select User Profile</InputLabel>
           <Autocomplete
   options={userProfiles}
   getOptionLabel={(option: any) => option.Username || ''}

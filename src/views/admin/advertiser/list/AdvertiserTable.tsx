@@ -410,7 +410,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       }),
       columnHelper.accessor('Title', {
         header: 'Subscription Status',
-        cell: ({ row }) => (row.original.Title === "Free Member") ? <div><Chip label={`${row.original.Title} ${row.original.Price}$`} color='primary' variant='outlined' /></div> :
+        cell: ({ row }) => (row.original.Title === "Free Member") ? <div><Chip label={`${row.original.Title} $${row.original.Price}`} color='primary' variant='outlined' /></div> :
           <div><Chip label={`${row.original.Title} $${row.original.Price}`} color='success' variant='outlined'></Chip></div>
       }),
       columnHelper.accessor('CreatedAt', {
