@@ -97,6 +97,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
       >
         Event Manager
       </MenuItem>
+      <MenuItem href={(`/admin/qa/invoice`)}
+        icon={<i className='ri-spam-line' />}
+        exactMatch={false}
+        activeUrl='/admin/qa/invoice'
+      >
+        Deleted Profiles
+      </MenuItem>
     </>
   )
 
@@ -131,14 +138,14 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
       >
         Event Manager
       </MenuItem>
-      {/* <MenuItem href={(`/admin/sp/vertical`)}
-        icon={<i className='ri-archive-stack-line' />}
+      <MenuItem href={(`/admin/sp/invoice`)}
+        icon={<i className='ri-spam-line' />}
         exactMatch={false}
-        activeUrl='/admin/sp/vertical'
+        activeUrl='/admin/sp/invoice'
       >
-        Vertical
+        Deleted Profiles
       </MenuItem>
-      <MenuItem href={(`/admin/sp/contract`)}
+      {/*<MenuItem href={(`/admin/sp/contract`)}
         icon={<i className='ri-shake-hands-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/contract'

@@ -12,9 +12,20 @@ const pool = new Pool({
 
 export async function GET(req: Request) {
     try {
-        const query = `SELECT * FROM admin_get_deleted_profiles()`;
-    }
-    catch (error) {
 
+        const getReportQuery = `SELECT * FROM admin_get_deleted_profiles()`
+        const result = await pool.query(getReportQuery);
+
+        if (result.rowCount === 0) {
+            return NextResponse.json(
+                { error: `No deleted profile data!` },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json({ deletedProfiles: result.rows, totalCount: result.rows.length });
+    } catch (error) {
+        console.error('Failed to get the history:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

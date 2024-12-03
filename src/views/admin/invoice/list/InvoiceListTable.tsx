@@ -1,24 +1,44 @@
 'use client'
 
-import { forwardRef, useEffect, useMemo, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { format } from 'date-fns';
 
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import Card from '@mui/material/Card'
-
 import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
 import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
-import { Button, CardContent, FormControl, IconButton, InputLabel, MenuItem, Select, Skeleton, TablePagination, TextField, Tooltip, Typography } from '@mui/material'
+import { CardHeader, Skeleton, TablePagination, Typography, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
 import classNames from 'classnames'
 
+import { toast } from 'react-toastify'
 
+import { supabase } from '@/utils/supabase'
 import tableStyles from '@core/styles/table.module.css'
+import EditDialog from '../edit'
+import CustomAvatar from '@/@core/components/mui/Avatar'
 import OptionMenu from '@/@core/components/option-menu'
 import Link from '@/components/Link'
-import CustomAvatar from '@/@core/components/mui/Avatar'
-import { supabase } from '@/utils/supabase'
-import type { ThemeColor } from '@/@core/types'
-import InvoicetoPdf from '../export/export'
+import Swal from 'sweetalert2';
+
+import { Email } from '@mui/icons-material';
+import dynamic from 'next/dynamic';
+
+// Dynamically import a rich-text editor (like React Quill)
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
+const colors = [
+  'rgba(255, 99, 132, 0.1)',
+  'rgba(54, 162, 235, 0.1)',
+  'rgba(255, 206, 86, 0.1)',
+  'rgba(75, 192, 192, 0.1)',
+  'rgba(153, 102, 255, 0.1)',
+  'rgba(255, 159, 64, 0.1)',
+  'rgba(255, 99, 132, 0.1)',
+  'rgba(255, 205, 86, 0.1)',
+  'rgba(75, 192, 192, 0.1)',
+  'rgba(54, 162, 235, 0.1)',
+];
 
 declare module '@tanstack/table-core' {
   interface FilterFns {
@@ -29,44 +49,19 @@ declare module '@tanstack/table-core' {
   }
 }
 
-interface AdvertiserType {
-  first_name: string;
-  last_name: string;
-  email: string;
+interface UserType {
+  Avatar: string;
+  Username: string;
+  Email: string;
+  AccountType: string;
+  Title: string;
+  Price: string;
+  DateDeleted: string;
 }
 
-interface InvoiceType {
-  invoice_id: string;
-  issued_date: Date;
-  retainer: number;
-  total_amount: number;
-  invoice_status: string;
-  due_date: Date;
-  paid_amount: number;
-  payment_term: string;
-  payment_status: string;
-  advertisers: AdvertiserType;
-  updated_date: Date;
-}
-
-type TableAction = InvoiceType & {
-  action?: string
-}
-
-type InvoiceStatusObj = {
-  [key: string]: {
-    icon: string
-    color: ThemeColor
-  }
-}
-
-// Vars
-const invoiceStatusObj: InvoiceStatusObj = {
-  Sent: { color: 'secondary', icon: 'ri-send-plane-2-line' },
-  Paid: { color: 'success', icon: 'ri-check-line' },
-  Draft: { color: 'error', icon: 'ri-mail-line' },
-  Received: { color: 'primary', icon: 'ri-mail-open-line' },
-  Canceled: { color: 'secondary', icon: 'ri-mail-close-line' }
+type TableAction = UserType & {
+  action?: string;
+  Id: string;
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -86,79 +81,267 @@ export interface RefreshHandle {
 const columnHelper = createColumnHelper<TableAction>()
 
 const InvoiceTable = forwardRef<RefreshHandle>(({ }, ref) => {
-
   const searchParams = useSearchParams()
-  const [size, setSize] = useState(Number(searchParams.get('size') ?? 10));
-  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 0));
-  const [totalCount, setTotalCount] = useState(0)
-  const [invoiceStatus, setInvoiceStatus] = useState(searchParams.get('status') ?? '')
-  const [searchString, setSearchString] = useState(searchParams.get('search') ?? '')
-  const [searchData, setSearchData] = useState<InvoiceType[]>([])
   const [rowSelection, setRowSelection] = useState({});
+  const [searchData, setSearchData] = useState<UserType[]>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [size, setSize] = useState(Number(searchParams.get('size') ?? 10));
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 0));
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
+  const [type, setType] = useState(searchParams.get('type') ?? '')
   const router = useRouter()
+  const [openHistory, setOpenHistory] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [profileId, setProfileId] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEmailSubject('');
+    setEmailBody('');
+  };
+
+  const handleSendEmail = () => {
+    console.log('Email Subject:', emailSubject);
+    console.log('Email Body:', emailBody);
+    // Add API call here to send the email
+    handleCloseDialog();
+  };
+  useImperativeHandle(ref, () => ({
+    refresh: () => {
+      fetchData();
+    }
+  }))
 
   const changeParam = () => {
     const searchParams = new URLSearchParams()
 
-    if (invoiceStatus) searchParams.set('status', invoiceStatus)
-    if (searchString) searchParams.set('search', searchString)
+    if (type) searchParams.set('type', type)
+    if (search) searchParams.set('search', search)
+
+    console.log(String(size));
     searchParams.set('size', String(size))
     searchParams.set('page', String(pageIndex))
     const queryString = searchParams.toString()
 
     router.push(`/admin/sp/invoice/${queryString ? `?${queryString}` : ''}`)
   }
-
-  const fetchData = async () => {
-    const sStatus = (searchParams.get('status') ?? '');
-    const sSearch = (searchParams.get('search') ?? '');
-    const sPage = (Number(searchParams.get('page') ?? 0))
-    const sSize = (Number(searchParams.get('size') ?? 10))
-
+  async function deleteUser(userId: string) {
     try {
-      let query = supabase
-        .from('invoices')
-        .select(`*,
-          advertisers (*)
-          `, { count: 'exact' })
-        .order('issued_date', { ascending: false })
+      console.log(userId, "====userId");
 
-      if (sStatus) query = query.eq('invoice_status', sStatus)
-      if (sSearch) query = query.eq('invoice_id', sSearch)
-      query = query.range(sPage * sSize, (sPage + 1) * sSize - 1)
-      const { data: invoiceData, count: invoiceCount, error: invoiceError } = await query;
+      // Confirm before deleting
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to delete the user with ID ${userId}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+      });
 
-      if (invoiceError) throw invoiceError
+      // If user confirms deletion
+      if (result.isConfirmed) {
+        const apiUrl = `/api/admin/user?id=${userId}`;
 
-      setSearchData(invoiceData)
-      setTotalCount(invoiceCount ?? 0)
+        const response = await fetch(apiUrl, {
+          method: 'DELETE', // Specify the HTTP method
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete user with ID ${userId}`);
+        }
+
+        const responseData = await response.json();
+        console.log(responseData);
+
+        // Show success alert
+        Swal.fire('Deleted!', `User with ID ${userId} has been deleted.`, 'success');
+
+        // Optionally, refetch data to update the UI
+      } else {
+        console.log('User deletion cancelled.');
+      }
     } catch (error: any) {
-      console.log(error.message)
-    } finally {
-      setLoading(false)
+      console.error('Error deleting user:', error.message);
+      // Show error alert
+      Swal.fire('Error!', 'An error occurred while deleting the user.', 'error');
     }
   }
 
-  useEffect(() => {
-    fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+
+  async function upgradeUser(userId: string) {
+    try {
+      console.log(userId, "====userId");
+
+      // Confirm before upgrading
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to upgrade the user with ID ${userId}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, upgrade it!',
+        cancelButtonText: 'Cancel',
+      });
+
+      // If user confirms the upgrade
+      if (result.isConfirmed) {
+        const apiUrl = `/api/admin/user/upgrade`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST', // Specify the HTTP method
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ profileId: userId }), // Pass profileId in the request body
+        });
+
+        if (!response.ok) {
+          const errorResponse = await response.json();
+          throw new Error(errorResponse.error || `Failed to upgrade user with ID ${userId}`);
+        }
+
+        const responseData = await response.json();
+        console.log(responseData);
+
+        // Show success alert
+        await Swal.fire('Upgraded!', `User with ID ${userId} has been upgraded successfully.`, 'success');
+        fetchData()
+        // Optionally, refetch data to update the UI
+        // Example: fetchUsers(); // Call a function to refresh the user list
+      } else {
+        console.log('User upgrade cancelled.');
+      }
+    } catch (error: any) {
+      console.error('Error upgrading user:', error.message);
+      // Show error alert
+      await Swal.fire('Error!', `An error occurred: ${error.message}`, 'error');
+    }
+  }
+
+  async function downgradeUser(userId: string) {
+    try {
+      console.log(userId, "====userId");
+
+      // Confirm before upgrading
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to downgrade the user with ID ${userId}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, downgrade it!',
+        cancelButtonText: 'Cancel',
+      });
+
+      // If user confirms the downgrade
+      if (result.isConfirmed) {
+        const apiUrl = `/api/admin/user/downgrade`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST', // Specify the HTTP method
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ profileId: userId }), // Pass profileId in the request body
+        });
+
+        if (!response.ok) {
+          const errorResponse = await response.json();
+          throw new Error(errorResponse.error || `Failed to downgrade user with ID ${userId}`);
+        }
+
+        const responseData = await response.json();
+        console.log(responseData);
+
+        // Show success alert
+        await Swal.fire('Downgraded!', `User with ID ${userId} has been downgraded successfully.`, 'success');
+        fetchData();
+        // Optionally, refetch data to update the UI
+        // Example: fetchUsers(); // Call a function to refresh the user list
+      } else {
+        console.log('User downgrade cancelled.');
+      }
+    } catch (error: any) {
+      console.error('Error upgrading user:', error.message);
+      // Show error alert
+      await Swal.fire('Error!', `An error occurred: ${error.message}`, 'error');
+    }
+  }
+
+  async function getHistoryData(userId: string) {
+    setOpenHistory(true);
+  }
+  const fetchData = async () => {
+    const sType = (searchParams.get('type') ?? '');
+    const sSearch = (searchParams.get('search') ?? '');
+    var sPage = (Number(searchParams.get('page') ?? 1))
+    const sSize = (Number(searchParams.get('size') ?? 10))
+
+    try {
+      let query = '/api/admin/user/deleted?'
+      const params = new URLSearchParams();
+
+      if (sType) params.append('type', sType);
+      if (sSearch) params.append('search', sSearch);
+      if (sPage == 0) {
+        sPage = 1
+      }
+      params.append('page', sPage.toString());
+      params.append('size', sSize.toString());
+      const apiUrl = `${query}${params}`
+      console.log(apiUrl)
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const data = await response.json();
+      console.log(data);
+      setSearchData(data?.deletedProfiles)
+      setLoading(false)
+      setTotalCount(Number(data.totalCount))
+    } catch (error: any) {
+    }
+  }
+
+  const genColor = (name: string) => {
+    const hashCode = (str: string): number => {
+      let hash = 0;
+
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0; // Convert to 32bit integer
+      }
+
+      return hash;
+    };
+
+    const hash = hashCode(name);
+    const colorIndex = Math.abs(hash) % colors.length;
+
+    return colors[colorIndex];
+  }
 
   // Hooks
   useEffect(() => {
+
     changeParam()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [size, pageIndex, invoiceStatus, searchString])
+  }, [size, pageIndex])
 
   useEffect(() => {
     const debouncedFetch = setTimeout(() => {
       fetchData()
     }, 500)
 
-    setInvoiceStatus(searchParams.get('status') ?? '');
-    setSearchString(searchParams.get('search') ?? '');
     setPageIndex(Number(searchParams.get('page') ?? 0))
     setSize(Number(searchParams.get('size') ?? 10))
 
@@ -166,156 +349,104 @@ const InvoiceTable = forwardRef<RefreshHandle>(({ }, ref) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
+  const DeactiveAction = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ type: 'Deactive' })
+        .eq('auth_id', userId)
+
+      if (error) throw error
+
+      fetchData()
+    } catch (error: any) {
+      toast.error(`${error.message}`, {
+        autoClose: 3000,
+        type: 'error'
+      })
+    }
+  }
+
   const columns = useMemo<ColumnDef<TableAction, any>[]>(
+
     () => [
       {
-        id: 'id',
+        id: 'no',
         header: ({ table }) => (
-          <>#</>
+          <>No</>
         ),
         cell: ({ row }) => (
-          <>#{row.original.invoice_id}</>
+          <>{size * pageIndex + row.index + 1}</>
         )
       },
-      columnHelper.accessor('invoice_status', {
-        header: 'Status',
+      {
+        id: 'contact',
+        header: ({ table }) => (
+          <>Avatar</>
+        ),
         cell: ({ row }) => {
-          const date = new Date(row.original.updated_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric'
-          })
-
-          return (
-            <Tooltip
-              title={
-                <div>
-                  <Typography variant='body2' component='span' className='text-inherit'>
-                    {row.original.invoice_status}
-                  </Typography>
-                  <br />
-                  <Typography variant='body2' component='span' className='text-inherit'>
-                    Update Date:
-                  </Typography>{' '}
-                  {date}
-                </div>
-              }
-            >
-              <CustomAvatar skin='light' color={invoiceStatusObj[row.original.invoice_status].color} size={28}>
-                <i className={classNames('bs-4 is-4', invoiceStatusObj[row.original.invoice_status].icon)} />
-              </CustomAvatar>
-            </Tooltip>
-          )
-        }
-      }),
-      columnHelper.accessor('advertisers', {
-        header: 'Advertiser',
-        cell: ({ row }) => {
+          const username = `${row.original.Username}`;
+          const avatarColor = genColor(username);
 
           return (
             <div className='flex items-center gap-3'>
-              <CustomAvatar color={'warning'} skin='light-static'>
-                {(row.original.advertisers.first_name.charAt(0) + row.original.advertisers.last_name.charAt(0)).toUpperCase()}
-              </CustomAvatar>
-              <div className='flex flex-col'>
-                <Typography className='font-medium' color='text.primary'>
-                  {`${row.original.advertisers.first_name} ${row.original.advertisers.last_name}`}
-                </Typography>
-                <Typography variant='body2'>{row.original.advertisers.email}</Typography>
-
-              </div>
+              <CustomAvatar style={{ backgroundColor: avatarColor }} skin='light-static' src={row.original.Avatar} />
             </div>
           )
         }
+      },
+      columnHelper.accessor('Email', {
+        header: 'Email',
+        cell: ({ row }) => row.original.Email && <Typography>{row.original.Email}</Typography>
       }),
-      columnHelper.accessor('total_amount', {
-        header: 'Total Amount',
-        cell: ({ row }) => <Typography>${Number(row.original.total_amount)}</Typography>
+      columnHelper.accessor('Username', {
+        header: 'Username',
+        cell: ({ row }) => row.original.Username && <Typography>{row.original.Username}</Typography>
       }),
-      columnHelper.accessor('issued_date', {
-        header: 'Issued Date',
-        cell: ({ row }) => {
-          const date = new Date(row.original.issued_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric'
-          })
-
-          return <Typography>{date}</Typography>
-        }
-      }),
-      columnHelper.accessor('due_date', {
-        header: 'Due Date',
-        cell: ({ row }) => {
-          const date = new Date(row.original.due_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric'
-          })
-
-          return <Typography>{date}</Typography>
-        }
-      }),
-      columnHelper.accessor('payment_term', {
-        header: 'Payment Term',
-        cell: ({ row }) => <Typography>{String(row.original.payment_term)}</Typography>
-      }),
-      columnHelper.accessor('paid_amount', {
-        header: 'Paid Amount',
-        cell: ({ row }) => <Typography>${String(row.original.paid_amount)}</Typography>
+      columnHelper.accessor('DateDeleted', {
+        header: 'Deleted Date',
+        cell: ({ row }) => <Typography>{format(new Date(row.original.DateDeleted), 'dd/MM/yyyy HH:mm')}</Typography>
       }),
       columnHelper.accessor('action', {
         header: 'Action',
         cell: ({ row }) => (
-          <div className='flex items-center'>
-            <IconButton>
-              <Link
-                href={`/admin/sp/invoice/view/${row.original.invoice_id}`}
-                className='flex'
-              >
-                <i className='ri-eye-line text-textSecondary' />
-              </Link>
-            </IconButton>
-            <OptionMenu
-              iconButtonProps={{ size: 'medium' }}
-              iconClassName='text-textSecondary'
-              options={
-                row.original.invoice_status === 'Paid' || row.original.invoice_status === 'Canceled' ?
-                  [
-                    {
-                      text: 'Download',
-                      icon: 'ri-download-line',
-                      menuItemProps: {
-                        onClick: () => {
-                          InvoicetoPdf(row.original.invoice_id)
-                        },
-                        className: 'flex items-center gap-2'
-                      }
-                    }
-                  ] :
-                  [
-                    {
-                      text: 'Download',
-                      icon: 'ri-download-line',
-                      menuItemProps: {
-                        onClick: () => {
-                          InvoicetoPdf(row.original.invoice_id)
-                        },
-                        className: 'flex items-center gap-2'
-                      }
-                    },
-                    {
-                      text: 'Edit',
-                      icon: 'ri-pencil-line',
-                      href: `/admin/sp/invoice/edit/${row.original.invoice_id}`,
-                      linkProps: {
-                        className: 'flex items-center is-full plb-2 pli-4 gap-2 text-textSecondary'
-                      }
-                    }
-                  ]
+          <OptionMenu
+            iconButtonProps={{ size: 'medium' }}
+            iconClassName='text-textSecondary text-[22px]'
+            leftAlignMenu
+            options={[
+              {
+                text: 'Delete',
+                menuItemProps: {
+                  onClick: () => console.log("Hi"),
+                  className: 'flex items-center gap-2'
+                }
+              },
+              {
+                text: 'Upgrade',
+                menuItemProps: {
+                  onClick: () => console.log("Hi"),
+                  className: 'flex items-center gap-2'
+                }
+              },
+              {
+                text: 'Downgrade',
+                menuItemProps: {
+                  onClick: () => console.log("Hi"),
+                  className: 'flex items-center gap-2'
+                }
+              },
+              {
+                text: 'Reactive',
+                menuItemProps: {
+                  onClick: () => {
+                    console.log("Clicked View");
+                  },
+                  className: 'flex items-center gap-2'
+                }
               }
-            />
-          </div>
+            ]}
+          />
         ),
         enableSorting: false,
         enablePinning: true,
@@ -379,43 +510,15 @@ const InvoiceTable = forwardRef<RefreshHandle>(({ }, ref) => {
   return (
     <>
       <Card>
-        <CardContent className='flex justify-between gap-4 flex-wrap flex-col sm:flex-row items-center'>
+        <CardHeader title='Deleted Users' action={
           <Button
-            variant='contained'
-            startIcon={<i className='ri-add-line' />}
-            href='invoice/create'
-            className='is-full sm:is-auto'
+            variant="outlined"
+            startIcon={<Email />}
+            onClick={handleOpenDialog}
           >
-            Create Invoice
+            Send Email
           </Button>
-          <div className='flex flex-col sm:flex-row is-full sm:is-auto items-center gap-4'>
-            <TextField
-              size='small'
-              value={searchString}
-              onChange={e => setSearchString(e.target.value)}
-              placeholder='Search invoice id'
-              className='is-full sm:is-auto min-is-[200px]'
-            />
-            <FormControl fullWidth size='small' className='min-is-[175px]'>
-              <InputLabel id='status-select'>Invoice Status</InputLabel>
-              <Select
-                fullWidth
-                id='select-status'
-                value={invoiceStatus}
-                onChange={e => setInvoiceStatus(e.target.value)}
-                label='Invoice Status'
-                labelId='status-select'
-              >
-                <MenuItem value=''>none</MenuItem>
-                <MenuItem value='Draft'>Draft</MenuItem>
-                <MenuItem value='Sent'>Sent</MenuItem>
-                <MenuItem value='Received'>Received</MenuItem>
-                <MenuItem value='Canceled'>Canceled</MenuItem>
-                <MenuItem value='Paid'>Paid</MenuItem>
-              </Select>
-            </FormControl>
-          </div>
-        </CardContent>
+        } />
         <div className='scrollbar-custom overflow-x-auto '>
           <table className={tableStyles.table}>
             <thead>
@@ -453,7 +556,7 @@ const InvoiceTable = forwardRef<RefreshHandle>(({ }, ref) => {
                     {skeletonTableRows}
                   </tbody>
                 </>) :
-                table.getFilteredRowModel().rows.length === 0 ? (
+                table.getRowModel().rows.length === 0 ? (
                   <tbody>
                     <tr>
                       <td colSpan={table.getVisibleFlatColumns().length} className='text-center'>
@@ -478,8 +581,7 @@ const InvoiceTable = forwardRef<RefreshHandle>(({ }, ref) => {
                               ))}
                             </tr>
                           )
-                        })
-                      }
+                        })}
                     </tbody>
                   )}
           </table>
@@ -505,6 +607,34 @@ const InvoiceTable = forwardRef<RefreshHandle>(({ }, ref) => {
           }}
         />
       </Card>
+      <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Send Email</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Subject"
+            variant="outlined"
+            value={emailSubject}
+            onChange={(e) => setEmailSubject(e.target.value)}
+            margin="normal"
+          />
+          <ReactQuill
+            theme="snow"
+            value={emailBody}
+            onChange={setEmailBody}
+            placeholder="Write your email here..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleSendEmail} variant="contained" color="primary">
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </>
   )
 })
