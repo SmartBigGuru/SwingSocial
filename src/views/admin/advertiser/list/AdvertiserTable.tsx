@@ -17,8 +17,9 @@ import { supabase } from '@/utils/supabase'
 import tableStyles from '@core/styles/table.module.css'
 import type { EditDialogHandle } from '../edit';
 import EditDialog from '../edit'
-import type { DetailViewHandle } from '../view';
-import DetailView from '../view'
+import type { DetailViewHandle } from '../view/detail';
+import HistoryViewHandle from '../view/history';
+import DetailView from '../view/detail'
 import CustomAvatar from '@/@core/components/mui/Avatar'
 import OptionMenu from '@/@core/components/option-menu'
 import Link from '@/components/Link'
@@ -55,7 +56,7 @@ declare module '@tanstack/table-core' {
 interface UserType {
   Avatar: string;
   Username: string;
-  Email:string;
+  Email: string;
   AccountType: string;
   Title: string;
   Price: string;
@@ -97,7 +98,9 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const router = useRouter()
   const editRef = useRef<EditDialogHandle>(null)
   const detailRef = useRef<DetailViewHandle>(null)
+  const [openHistory, setOpenHistory] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [profileId, setProfileId] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
 
@@ -228,6 +231,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       await Swal.fire('Error!', `An error occurred: ${error.message}`, 'error');
     }
   }
+
   async function downgradeUser(userId: string) {
     try {
       console.log(userId, "====userId");
@@ -277,6 +281,9 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
     }
   }
 
+  async function getHistoryData(userId: string) {
+    setOpenHistory(true);
+  }
   const fetchData = async () => {
     const sType = (searchParams.get('type') ?? '');
     const sSearch = (searchParams.get('search') ?? '');
@@ -455,6 +462,17 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   },
                   className: 'flex items-center gap-2'
                 }
+              },
+              {
+                text: 'History',
+                menuItemProps: {
+                  onClick: () => {
+                    console.log("Clicked History");
+                    setOpenHistory(true);
+                    setProfileId(row?.original?.Id);
+                  },
+                  className: 'flex items-center gap-2'
+                }
               }
             ]}
           />
@@ -620,6 +638,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       </Card>
       <EditDialog refresh={fetchData} ref={editRef} />
       <DetailView ref={detailRef} refresh={fetchData} />
+      <HistoryViewHandle open={openHistory} setOpen={setOpenHistory} profileId={profileId} />
       <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle>Send Email</DialogTitle>
         <DialogContent>
