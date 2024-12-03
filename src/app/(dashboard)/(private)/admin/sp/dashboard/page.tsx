@@ -24,6 +24,11 @@ import ClickAwayListener from '@mui/material/ClickAwayListener'
 import { useTheme } from '@mui/material/styles'
 
 import type { ApexOptions } from 'apexcharts'
+
+interface ReportData {
+  totalsubs: string; // Change the type if it's not a number
+  monchar: string;   // Change the type if it's not a string
+}
 // Component Imports
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
@@ -119,7 +124,7 @@ const series = [
 
 
 const Recharts = () => {
-  const [reportData, setReportData] = useState([]);
+  const [reportData, setReportData] = useState<ReportData[]>([]);
   const theme = useTheme()
 
   const fetchData = async () => {
