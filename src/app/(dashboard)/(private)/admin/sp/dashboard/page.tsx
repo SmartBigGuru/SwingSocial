@@ -1,131 +1,57 @@
 'use client'
 
 // Next Imports
-import { useState, useEffect, useRef } from 'react'
-import type { SyntheticEvent } from 'react'
-
-// Next Imports
-import dynamic from 'next/dynamic'
-// MUI Imports
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { format } from 'date-fns';
+import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
 import Grid from '@mui/material/Grid'
-import CardStatWithImage from '@components/card-statistics/Character'
-// Mui Imports
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Grow from '@mui/material/Grow'
-import Paper from '@mui/material/Paper'
-import Button from '@mui/material/Button'
-import Popper from '@mui/material/Popper'
-import MenuItem from '@mui/material/MenuItem'
-import MenuList from '@mui/material/MenuList'
-import ButtonGroup from '@mui/material/ButtonGroup'
-import ClickAwayListener from '@mui/material/ClickAwayListener'
-import { useTheme } from '@mui/material/styles'
+import CustomAvatar from '@/@core/components/mui/Avatar'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Card, CardHeader, Skeleton, TablePagination, Typography, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
+import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
+import OptionMenu from '@/@core/components/option-menu'
+import tableStyles from '@core/styles/table.module.css'
+import classNames from 'classnames'
 
-import type { ApexOptions } from 'apexcharts'
+const colors = [
+  'rgba(255, 99, 132, 0.1)',
+  'rgba(54, 162, 235, 0.1)',
+  'rgba(255, 206, 86, 0.1)',
+  'rgba(75, 192, 192, 0.1)',
+  'rgba(153, 102, 255, 0.1)',
+  'rgba(255, 159, 64, 0.1)',
+  'rgba(255, 99, 132, 0.1)',
+  'rgba(255, 205, 86, 0.1)',
+  'rgba(75, 192, 192, 0.1)',
+  'rgba(54, 162, 235, 0.1)',
+];
 
-interface ReportData {
-  totalsubs: string; // Change the type if it's not a number
-  monchar: string;   // Change the type if it's not a string
-}
-// Component Imports
-
-const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
-
-const options = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
-]
-
-const MonthButton = () => {
-  // States
-  const [open, setOpen] = useState<boolean>(false)
-  const [selectedIndex, setSelectedIndex] = useState<number>(0)
-
-  // Refs
-  const anchorRef = useRef<HTMLDivElement | null>(null)
-
-  const handleMenuItemClick = (event: SyntheticEvent, index: number) => {
-    setSelectedIndex(index)
-    setOpen(false)
-  }
-
-  const handleToggle = () => {
-    setOpen(prevOpen => !prevOpen)
-  }
-
-  const handleClose = () => {
-    setOpen(false)
-  }
-
-  return (
-    <>
-      <ButtonGroup variant='outlined' ref={anchorRef} aria-label='split button' size='small'>
-        <Button>{options[selectedIndex]}</Button>
-        <Button
-          className='pli-0'
-          aria-haspopup='menu'
-          onClick={handleToggle}
-          aria-label='select merge strategy'
-          aria-expanded={open ? 'true' : undefined}
-          aria-controls={open ? 'split-button-menu' : undefined}
-        >
-          <i className='ri-arrow-down-s-line text-lg' />
-        </Button>
-      </ButtonGroup>
-      <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition placement='bottom-end'>
-        {({ TransitionProps, placement }) => (
-          <Grow {...TransitionProps} style={{ transformOrigin: placement === 'bottom-end' ? 'right top' : 'left top' }}>
-            <Paper className='shadow-lg'>
-              <ClickAwayListener onClickAway={handleClose}>
-                <MenuList id='split-button-menu'>
-                  {options.map((option, index) => (
-                    <MenuItem
-                      key={option}
-                      selected={index === selectedIndex}
-                      onClick={event => handleMenuItemClick(event, index)}
-                    >
-                      {option}
-                    </MenuItem>
-                  ))}
-                </MenuList>
-              </ClickAwayListener>
-            </Paper>
-          </Grow>
-        )}
-      </Popper>
-    </>
-  )
+interface UserType {
+  yr: string;
+  monchar: string;
+  free: string;
+  paid: string;
+  totalsubs: string;
 }
 
-const series = [
-  {
-    name: 'Shipment',
-    type: 'column',
-    data: [38, 45, 33, 38, 32, 48, 45, 40, 42, 37]
-  },
-  {
-    name: 'Delivery',
-    type: 'line',
-    data: [23, 28, 23, 32, 25, 42, 32, 32, 26, 24]
-  }
-]
-
+type TableAction = UserType & {
+  action?: string;
+  Id: string;
+}
 
 const Recharts = () => {
-  const [reportData, setReportData] = useState<ReportData[]>([]);
-  const theme = useTheme()
+  const [searchData, setSearchData] = useState<UserType[]>([]);
+
+  const columnHelper = createColumnHelper<TableAction>()
+
+  const searchParams = useSearchParams();
+  const [size, setSize] = useState(Number(searchParams.get('size') ?? 10));
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageIndex, setPageIndex] = useState(Number(searchParams.get('page') ?? 0));
+  const [rowSelection, setRowSelection] = useState({});
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   const fetchData = async () => {
     try {
@@ -138,8 +64,10 @@ const Recharts = () => {
       }
 
       const data = await response.json();
-      setReportData(data.reports);
+      setSearchData(data?.reports);
       console.log(data)
+      setTotalCount(Number(data.totalCount))
+      setLoading(false)
       // setUser(data.user)
       // console.log(user[0]);
 
@@ -148,177 +76,216 @@ const Recharts = () => {
     }
   }
 
-  const options: ApexOptions = {
-    chart: {
-      type: 'line',
-      stacked: false,
-      parentHeightOffset: 0,
-      toolbar: {
-        show: false
-      },
-      zoom: {
-        enabled: false
-      }
-    },
-    markers: {
-      size: 5,
-      colors: '#fff',
-      strokeColors: 'var(--mui-palette-primary-main)',
-      hover: {
-        size: 6
-      },
-      radius: 4
-    },
-    stroke: {
-      curve: 'smooth',
-      width: [0, 3],
-      lineCap: 'round'
-    },
-    legend: {
-      show: true,
-      position: 'bottom',
-      markers: {
-        width: 8,
-        height: 8,
-        offsetY: 1,
-        offsetX: theme.direction === 'rtl' ? 8 : -4
-      },
-      height: 40,
-      itemMargin: {
-        horizontal: 10,
-        vertical: 0
-      },
-      fontSize: '15px',
-      fontFamily: 'Open Sans',
-      fontWeight: 400,
-      labels: {
-        colors: 'var(--mui-palette-text-primary)'
-      },
-      offsetY: 10
-    },
-    grid: {
-      strokeDashArray: 8,
-      borderColor: 'var(--mui-palette-divider)'
-    },
-    colors: ['var(--mui-palette-warning-main)', 'var(--mui-palette-primary-main)'],
-    fill: {
-      opacity: [1, 1]
-    },
-    plotOptions: {
-      bar: {
-        columnWidth: '30%',
-        borderRadius: 4,
-        borderRadiusApplication: 'end'
-      }
-    },
-    dataLabels: {
-      enabled: false
-    },
-    xaxis: {
-      tickAmount: 10,
-      categories: ['1 Jan', '2 Jan', '3 Jan', '4 Jan', '5 Jan', '6 Jan', '7 Jan', '8 Jan', '9 Jan', '10 Jan'],
-      labels: {
-        style: {
-          colors: 'var(--mui-palette-text-disabled)',
-          fontSize: '13px',
-          fontWeight: 400
-        }
-      },
-      axisBorder: {
-        show: false
-      },
-      axisTicks: {
-        show: false
-      }
-    },
-    yaxis: {
-      tickAmount: 5,
-      labels: {
-        style: {
-          colors: 'var(--mui-palette-text-disabled)',
-          fontSize: '13px',
-          fontWeight: 400
-        }
-      }
-    }
+  const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+    const itemRank = rankItem(row.getValue(columnId), value)
+
+    addMeta({
+      itemRank
+    })
+
+    return itemRank.passed
+  }
+
+  const changeParam = () => {
+    const searchParams = new URLSearchParams()
+
+    console.log(String(size));
+    searchParams.set('size', String(size))
+    searchParams.set('page', String(pageIndex))
+    const queryString = searchParams.toString()
+
+    router.push(`/admin/sp/dashboard/${queryString ? `?${queryString}` : ''}`)
   }
 
   useEffect(() => {
-    fetchData();
-  }, []);
+
+    changeParam()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [size, pageIndex])
+
+  useEffect(() => {
+    const debouncedFetch = setTimeout(() => {
+      fetchData()
+    }, 500)
+
+    return () => clearTimeout(debouncedFetch)
+  }, [searchParams]);
+
+  const columns = useMemo<ColumnDef<TableAction, any>[]>(
+
+    () => [
+      {
+        id: 'no',
+        header: ({ table }) => (
+          <>No</>
+        ),
+        cell: ({ row }) => (
+          <>{size * pageIndex + row.index + 1}</>
+        )
+      },
+      columnHelper.accessor('yr', {
+        header: 'Year',
+        cell: ({ row }) => row.original.yr && <Typography>{row.original.yr}</Typography>
+      }),
+      columnHelper.accessor('monchar', {
+        header: 'Month',
+        cell: ({ row }) => row.original.monchar && <Typography>{row.original.monchar}</Typography>
+      }),
+      columnHelper.accessor('free', {
+        header: 'Free',
+        cell: ({ row }) => row.original.free && <Typography>{row.original.free}</Typography>
+      }),
+      columnHelper.accessor('paid', {
+        header: 'Paid',
+        cell: ({ row }) => row.original.paid && <Typography>{row.original.paid}</Typography>
+      }),
+      columnHelper.accessor('totalsubs', {
+        header: 'TotalSubs',
+        cell: ({ row }) => row.original.totalsubs && <Typography>{row.original.totalsubs}</Typography>
+      })
+    ],
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchData]
+  )
+
+  const table = useReactTable({
+    data: searchData as any,
+    columns,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+
+    },
+    state: {
+      rowSelection,
+      globalFilter,
+      columnPinning: { right: ['action'] }
+    },
+    initialState: {
+      pagination: {
+        pageSize: size
+      },
+      columnPinning: {
+        right: ['action']
+      }
+    },
+    enableColumnPinning: true,
+    enableRowSelection: true,
+    globalFilterFn: fuzzyFilter,
+    onRowSelectionChange: setRowSelection,
+    getCoreRowModel: getCoreRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues()
+  })
+
+  const columnCount = table.getVisibleFlatColumns().length;
+  const skeletonTableRow = [];
+  const skeletonTableRows = [];
+
+  for (let i = 0; i < columnCount; i++) {
+    skeletonTableRow.push(<td key={`td-${i}`}><Skeleton /></td>);
+  }
+
+  for (let i = 0; i < size; i++) {
+    skeletonTableRows.push(<tr key={`tr-${i}`}>{skeletonTableRow}</tr>);
+  }
 
   return (
-    <Grid container spacing={6}>
-      <Grid item xs={12} sm={6} md={3} className='self-end'>
-        {reportData.length > 0 && <CardStatWithImage
-          stats={reportData[0].totalsubs}
-          trend='negative'
-          title='All Members'
-          trendNumber='15.6%'
-          chipColor='primary'
-          src='/images/illustrations/characters/9.png'
-          chipText={reportData[0].monchar}
-        />}
-      </Grid>
-      <Grid item xs={12} sm={6} md={3} className='self-end'>
-        {reportData.length > 0 && <CardStatWithImage
-          stats={reportData[1].totalsubs}
-          title='All Members'
-          trendNumber='20%'
-          chipText={reportData[1].monchar}
-          src='/images/illustrations/characters/11.png'
-        />}
-      </Grid>
-      <Grid item xs={12} sm={6} md={3} className='self-end'>
-        {reportData.length > 0 && <CardStatWithImage
-          stats={reportData[2].totalsubs}
-          trend='negative'
-          title='All Members'
-          trendNumber='20%'
-          chipText={reportData[2].monchar}
-          src='/images/illustrations/characters/12.png'
-        />}
-      </Grid>
-      <Grid item xs={12} sm={6} md={3} className='self-end'>
-        {reportData.length > 0 && <CardStatWithImage
-          stats={reportData[3].totalsubs}
-          trend='negative'
-          title='All Members'
-          trendNumber='20%'
-          chipText={reportData[3].monchar}
-          src='/images/illustrations/characters/10.png'
-        />}
-      </Grid>
-      <Grid item xs={12} sm={6} md={6} className='self-end'>
-        <Card>
-          <CardHeader title='Subscript' subheader='Total number of deliveries 23.8k' action={<MonthButton />} />
-          <CardContent>
-            <AppReactApexCharts
-              id='shipment-statistics'
-              type='line'
-              height={313}
-              width='100%'
-              series={series}
-              options={options}
-            />
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid item xs={12} sm={6} md={6} className='self-end'>
-        <Card>
-          <CardHeader title='Subscript' subheader='Total number of deliveries 23.8k' action={<MonthButton />} />
-          <CardContent>
-            <AppReactApexCharts
-              id='shipment-statistics'
-              type='line'
-              height={313}
-              width='100%'
-              series={series}
-              options={options}
-            />
-          </CardContent>
-        </Card>
-      </Grid>
+    <Grid>
+      <Card>
+        <div className='scrollbar-custom overflow-x-auto '>
+          <table className={tableStyles.table}>
+            <thead>
+              {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map(header => (
+                    <th key={header.id}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <>
+                          <div
+                            className={classNames({
+                              'flex items-center': header.column.getIsSorted(),
+                              'cursor-pointer select-none': header.column.getCanSort()
+                            })}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {{
+                              asc: <i className='ri-arrow-up-s-line text-xl' />,
+                              desc: <i className='ri-arrow-down-s-line text-xl' />
+                            }[header.column.getIsSorted() as 'asc' | 'desc'] ?? null}
+                          </div>
+                        </>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            {
+              loading ? (
+                <>
+                  <tbody>
+                    {skeletonTableRows}
+                  </tbody>
+                </>) :
+                table.getRowModel().rows.length === 0 ? (
+                  <tbody>
+                    <tr>
+                      <td colSpan={table.getVisibleFlatColumns().length} className='text-center'>
+                        No data available
+                      </td>
+                    </tr>
+                  </tbody>
+                ) :
+                  (
+                    <tbody className='scrollbar-custom overflow-y-scroll '>
+                      {table
+                        .getRowModel()
+                        .rows
+                        .map(row => {
+                          return (
+                            <tr key={row.id} className={classNames({ selected: row.getIsSelected() })}>
+                              {row.getVisibleCells().map(cell => (
+                                <td key={cell.id}
+                                >
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>
+                              ))}
+                            </tr>
+                          )
+                        })}
+                    </tbody>
+                  )}
+          </table>
+        </div>
+        <TablePagination
+          rowsPerPageOptions={[10, 25, 50]}
+          component='div'
+          className='border-bs'
+          count={totalCount}
+          rowsPerPage={size}
+          page={pageIndex}
+
+          SelectProps={{
+            inputProps: { 'aria-label': 'rows per page' }
+          }}
+          onPageChange={(_, page) => {
+            setPageIndex(page)
+          }}
+          onRowsPerPageChange={e => {
+            setSize(Number(e.target.value))
+            table.setPageSize(Number(e.target.value))
+            setPageIndex(0)
+          }}
+        />
+      </Card>
     </Grid>
   )
 }

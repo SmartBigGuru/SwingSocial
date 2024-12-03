@@ -76,13 +76,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
       >
         Reports
       </MenuItem>
-      <MenuItem href={(`/admin/qa/user-manage`)}
+      {/* <MenuItem href={(`/admin/qa/user-manage`)}
         icon={<i className='ri-shield-user-line' />}
         exactMatch={false}
         activeUrl='/admin/qa/user-manage'
       >
         Admin Manager
-      </MenuItem>
+      </MenuItem> */}
       <MenuItem href={(`/admin/qa/advertiser-manage`)}
         icon={<i className='ri-account-circle-line' />}
         exactMatch={false}
@@ -117,13 +117,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         Reports
       </MenuItem>
 
-      <MenuItem href={(`/admin/sp/user-manage`)}
+      {/* <MenuItem href={(`/admin/sp/user-manage`)}
         icon={<i className='ri-shield-user-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/user-manage'
       >
         Admin Manager
-      </MenuItem>
+      </MenuItem> */}
       <MenuItem href={(`/admin/sp/advertiser-manage`)}
         icon={<i className='ri-account-circle-line' />}
         exactMatch={false}

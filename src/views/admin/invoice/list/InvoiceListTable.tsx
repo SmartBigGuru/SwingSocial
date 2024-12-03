@@ -349,24 +349,6 @@ const InvoiceTable = forwardRef<RefreshHandle>(({ }, ref) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  const DeactiveAction = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ type: 'Deactive' })
-        .eq('auth_id', userId)
-
-      if (error) throw error
-
-      fetchData()
-    } catch (error: any) {
-      toast.error(`${error.message}`, {
-        autoClose: 3000,
-        type: 'error'
-      })
-    }
-  }
-
   const columns = useMemo<ColumnDef<TableAction, any>[]>(
 
     () => [

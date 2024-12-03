@@ -50,14 +50,14 @@ interface PartnerType {
 
 type TableAction = PartnerType & {
   action?: string;
-  Id:string;
-  Name:string;
-  EndTime:string;
-  StartTime:string;
-  Username:string;
-  Address:string;
-  Venue:string;
-  Category:string;
+  Id: string;
+  Name: string;
+  EndTime: string;
+  StartTime: string;
+  Username: string;
+  Address: string;
+  Venue: string;
+  Category: string;
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -227,6 +227,28 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
         header: 'Event Name',
         cell: ({ row }) => <Typography>{row.original.Name}</Typography>
       }),
+      columnHelper.accessor('StartTime', {
+        header: 'Start Time',
+        cell: ({ row }) => {
+          const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+          return (
+            <Typography>
+              {new Date(row.original.StartTime).toLocaleDateString('en-US')}
+            </Typography>
+          );
+        }
+      }),
+      columnHelper.accessor('EndTime', {
+        header: 'End Date',
+        cell: ({ row }) => {
+          const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+          return (
+            <Typography>
+              {new Date(row.original.EndTime).toLocaleDateString('en-US')}
+            </Typography>
+          );
+        }
+      }),
       columnHelper.accessor('Category', {
         header: 'Category',
         cell: ({ row }) => <Typography>{row.original.Category}</Typography>
@@ -242,14 +264,6 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
       columnHelper.accessor('Username', {
         header: 'Username',
         cell: ({ row }) => <Typography>{row.original.Username}</Typography>
-      }),
-      columnHelper.accessor('StartTime', {
-        header: 'Start Time',
-        cell: ({ row }) => <Typography>{new Date(row.original.StartTime).toLocaleString()}</Typography>
-      }),
-      columnHelper.accessor('EndTime', {
-        header: 'End Time',
-        cell: ({ row }) => <Typography>{new Date(row.original.EndTime).toLocaleString()}</Typography>
       }),
       columnHelper.accessor('action', {
         header: 'Action',

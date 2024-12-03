@@ -33,7 +33,7 @@ const TableFilters = (props: RefreshProps) => {
   // States
   const [size, setSize] = useState(searchParams.get('size') ?? '10');
   const [pageIndex, setPageIndex] = useState(searchParams.get('page') ?? '1');
-  const [type, setType] = useState<SearchDataFormat['type']>('')
+  const [type, setType] = useState<SearchDataFormat['type']>('Username')
   const [searchString, setSearchString] = useState<SearchDataFormat['search']>('')
 
   const addAdvertiserRef = useRef<AddNewAdverterHandle>(null)
@@ -56,7 +56,7 @@ const TableFilters = (props: RefreshProps) => {
   }
 
   useEffect(() => {
-    setType(searchParams.get('type') || '')
+    setType(searchParams.get('type') || 'Username')
     setSearchString(searchParams.get('search') || '')
     setSize(searchParams.get('size') ?? '10')
     setPageIndex(searchParams.get('page') ?? '1')
@@ -105,7 +105,6 @@ const TableFilters = (props: RefreshProps) => {
               size='small'
               inputProps={{ placeholder: 'Select Role' }}
             >
-              <MenuItem value=''>Select Type</MenuItem>
               <MenuItem value='Email'>Email</MenuItem>
               <MenuItem value='Username'>Username</MenuItem>
             </Select>
