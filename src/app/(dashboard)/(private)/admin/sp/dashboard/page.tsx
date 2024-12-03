@@ -261,33 +261,33 @@ const Recharts = () => {
         />}
       </Grid>
       <Grid item xs={12} sm={6} md={3} className='self-end'>
-        <CardStatWithImage
+        {reportData.length > 0 && <CardStatWithImage
           stats={reportData[1].totalsubs}
           title='All Members'
           trendNumber='20%'
           chipText={reportData[1].monchar}
           src='/images/illustrations/characters/11.png'
-        />
+        />}
       </Grid>
       <Grid item xs={12} sm={6} md={3} className='self-end'>
-        <CardStatWithImage
+        {reportData.length > 0 && <CardStatWithImage
           stats={reportData[2].totalsubs}
           trend='negative'
           title='All Members'
           trendNumber='20%'
           chipText={reportData[2].monchar}
           src='/images/illustrations/characters/12.png'
-        />
+        />}
       </Grid>
       <Grid item xs={12} sm={6} md={3} className='self-end'>
-        <CardStatWithImage
+        {reportData.length > 0 && <CardStatWithImage
           stats={reportData[3].totalsubs}
           trend='negative'
           title='All Members'
           trendNumber='20%'
           chipText={reportData[3].monchar}
           src='/images/illustrations/characters/10.png'
-        />
+        />}
       </Grid>
       <Grid item xs={12} sm={6} md={6} className='self-end'>
         <Card>
