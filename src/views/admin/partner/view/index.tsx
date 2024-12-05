@@ -1,7 +1,7 @@
 'use client'
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
-import { CardContent,Card, Chip, Dialog, Divider, Grid, Typography, useMediaQuery, Button, FormControl, Select, MenuItem, InputLabel, DialogTitle, DialogContent, TextField, DialogActions, Autocomplete, CircularProgress, AutocompleteInputChangeReason } from "@mui/material";
+import { CardContent, Card, Chip, Dialog, Divider, Grid, Typography, useMediaQuery, Button, FormControl, Select, MenuItem, InputLabel, DialogTitle, DialogContent, TextField, DialogActions, Autocomplete, CircularProgress, AutocompleteInputChangeReason } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Email, Delete, FileDownload } from "@mui/icons-material";
 import type { Theme } from "@mui/material/styles/createTheme";
@@ -24,6 +24,17 @@ interface RefreshAction {
   refresh: () => void
 }
 
+interface Attendee {
+  Avatar: string;
+  Email: string;
+  Name: string;
+  Phone: string;
+  Price: number | string; // Price can be a number or string
+  ProfileId: string;
+  TicketType: string;
+  Username: string;
+}
+
 interface CompanyType {
   company_name: string;
   company_address: string;
@@ -38,15 +49,15 @@ interface AdvertiserType {
   phone: string;
   status: string;
   companies: CompanyType;
-  Images:any;
-  EndTime:string;
-  StartTime:string;
-  EmailDescription:string;
-  Description:string;
-  Category:string;
-  Venue:string;
-  Name:string;
-  CoverImageUrl:string;
+  Images: any;
+  EndTime: string;
+  StartTime: string;
+  EmailDescription: string;
+  Description: string;
+  Category: string;
+  Venue: string;
+  Name: string;
+  CoverImageUrl: string;
 
 }
 
@@ -87,7 +98,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const [userProfiles, setUserProfiles] = useState<any[]>([]); // User profiles state
   const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
 
-  console.log(selectedProfile,"=====userProfiles");
+  console.log(selectedProfile, "=====userProfiles");
 
   const [openDialog, setOpenDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
@@ -136,6 +147,11 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       }
 
       const { event, rsvp, attendees, tickets } = await response.json();
+
+      attendees.forEach((item: Attendee) => {
+        item.Price = "$159.00"; // Change the price to "$159.00"
+      });
+
       if (!event) {
         console.error('Event not found');
         setEvent(undefined);
@@ -158,7 +174,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   };
 
 
-  const handleRemoveRSVP = async (profileId:string) => {
+  const handleRemoveRSVP = async (profileId: string) => {
     try {
       const response = await fetch(`/api/admin/events/rsvp?profileId=${profileId}&id=${eventId}`, {
         method: 'DELETE',
@@ -172,7 +188,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       // Remove the RSVP from the local state
       setRSVP(prevRSVP => prevRSVP.filter(user => user.ProfileId !== profileId));
       console.log('RSVP removed successfully');
-    } catch (error:any) {
+    } catch (error: any) {
       console.error('Error removing RSVP:', error.message);
     }
   };
@@ -241,7 +257,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       return;
     }
 
-    const doc:any = new jsPDF();
+    const doc: any = new jsPDF();
     const tableColumnHeaders = ["Profile ID", "Name", "Email", "RSVP Status"];
     const tableRows = rsvp.map((entry) => [
       entry.ProfileId,
@@ -305,7 +321,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       return;
     }
 
-    const doc:any = new jsPDF();
+    const doc: any = new jsPDF();
     const tableColumnHeaders = ["Profile ID", "Name", "Email", "Attendees Status"];
     const tableRows = attendees.map((entry) => [
       entry.ProfileId,
@@ -337,7 +353,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       headerName: "Actions",
       flex: 0.5,
       sortable: false,
-      renderCell: (params:any) => (
+      renderCell: (params: any) => (
         <>
           <IconButton color="primary" aria-label="send-email" onClick={() => console.log(`Sending email to ${params.row.Email}`)}>
             <Email />
@@ -351,15 +367,17 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   ];
 
   const attendeeColumns = [
-    { field: "ProfileId", headerName: "ProfileId", flex: 1 },
     { field: "Username", headerName: "Name", flex: 1 },
     { field: "Email", headerName: "Email", flex: 1 },
+    { field: "Phone", headerName: "Phone", flex: 1 },
+    { field: "TicketType", headerName: "TicketType", flex: 1 },
+    { field: "Price", headerName: "Price", flex: 1 },
     {
       field: "Actions",
       headerName: "Actions",
       flex: 0.5,
       sortable: false,
-      renderCell: (params:any) => (
+      renderCell: (params: any) => (
         <>
           <IconButton color="primary" aria-label="send-email" onClick={() => console.log(`Sending email to ${params.row.Email}`)}>
             <Email />
@@ -372,7 +390,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     },
   ];
 
-   // Fetch user profiles
+  // Fetch user profiles
   // Function to fetch user profiles with search and pagination
   const fetchUserProfiles = async (search: string, page: number) => {
     try {
@@ -384,12 +402,12 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
         console.error('Failed to fetch user profiles:', response.statusText);
         return;
       }
-      const data:any = await response.json();
+      const data: any = await response.json();
       if (page === 1) {
         setUserProfiles(data?.profiles || []);
       } else {
         // Append results for pagination
-        setUserProfiles((prevProfiles:any) => {
+        setUserProfiles((prevProfiles: any) => {
           return [...prevProfiles, ...(data?.profiles || [])];
         });
       }
@@ -400,16 +418,16 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     }
   };
 
-   // Handle input change for search
-   // Handle input change for search
-const handleSearchChange = (
-  event: React.SyntheticEvent,
-  value: string,
-  reason: AutocompleteInputChangeReason
-) => {
-  setSearchTerm(value); // Use the `value` parameter for the search term
-  setPage(1); // Reset to page 1 for new searches
-};
+  // Handle input change for search
+  // Handle input change for search
+  const handleSearchChange = (
+    event: React.SyntheticEvent,
+    value: string,
+    reason: AutocompleteInputChangeReason
+  ) => {
+    setSearchTerm(value); // Use the `value` parameter for the search term
+    setPage(1); // Reset to page 1 for new searches
+  };
 
 
   // Load more data when the dropdown is scrolled to the bottom
@@ -426,163 +444,163 @@ const handleSearchChange = (
   // Call this on component mount
   useEffect(() => {
     fetchUserProfiles(searchTerm, page);
-  }, [searchTerm,page]);
+  }, [searchTerm, page]);
 
 
   return (
     <>
-     <Dialog
-  open={open}
-  scroll="paper"
-  onClose={() => {
-    setEvent(undefined);
-    setContract(undefined);
-    setOpen(false);
-  }}
-  maxWidth="lg"
-  fullWidth
-  aria-labelledby="event-dialog-title"
->
-  <Grid container className="scrollbar-custom overflow-y-auto p-6">
-    <Grid item lg={12} md={12}>
-      {event && (
-        <CardContent className="flex flex-col gap-6">
-          <Grid container spacing={4}>
-            {/* Left side: Event Image, Title, RSVP, and Attendees */}
-            <Grid item lg={5} md={5} xs={12} className="flex flex-col items-center">
-              <div className="flex flex-col gap-6 items-center">
-                <img
-                  src={event?.CoverImageUrl || '/images/default-event.png'}
-                  alt="event-cover"
-                  className="w-full rounded-lg shadow-lg"
-                />
-                <Typography variant="h4" className="font-semibold mt-4">
-                  {event?.Name}
-                </Typography>
-                <Typography variant="body1" color="text.secondary" className="text-center">
-                  {event?.Venue}
-                </Typography>
-                <Chip
-                  label={event?.Category}
-                  color="primary"
-                  size="small"
-                  variant="outlined"
-                  className="mt-2"
-                />
+      <Dialog
+        open={open}
+        scroll="paper"
+        onClose={() => {
+          setEvent(undefined);
+          setContract(undefined);
+          setOpen(false);
+        }}
+        maxWidth="lg"
+        fullWidth
+        aria-labelledby="event-dialog-title"
+      >
+        <Grid container className="scrollbar-custom overflow-y-auto p-6">
+          <Grid item lg={12} md={12}>
+            {event && (
+              <CardContent className="flex flex-col gap-6">
+                <Grid container spacing={4}>
+                  {/* Left side: Event Image, Title, RSVP, and Attendees */}
+                  <Grid item lg={5} md={5} xs={12} className="flex flex-col items-center">
+                    <div className="flex flex-col gap-6 items-center">
+                      <img
+                        src={event?.CoverImageUrl || '/images/default-event.png'}
+                        alt="event-cover"
+                        className="w-full rounded-lg shadow-lg"
+                      />
+                      <Typography variant="h4" className="font-semibold mt-4">
+                        {event?.Name}
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary" className="text-center">
+                        {event?.Venue}
+                      </Typography>
+                      <Chip
+                        label={event?.Category}
+                        color="primary"
+                        size="small"
+                        variant="outlined"
+                        className="mt-2"
+                      />
 
 
-              <div className="flex flex-col gap-4">
-                  <Typography variant="h6" className="font-medium">Images</Typography>
-                  <Grid container spacing={2}>
-                    {event?.Images?.map((image:any, index:number) => (
-                      <Grid item xs={4} key={index}>
-                        <img
-                          src={image}
-                          alt={`event-image-${index}`}
-                          className="w-full h-auto rounded-lg shadow-sm"
-                        />
-                      </Grid>
-                    ))}
+                      <div className="flex flex-col gap-4">
+                        <Typography variant="h6" className="font-medium">Images</Typography>
+                        <Grid container spacing={2}>
+                          {event?.Images?.map((image: any, index: number) => (
+                            <Grid item xs={4} key={index}>
+                              <img
+                                src={image}
+                                alt={`event-image-${index}`}
+                                className="w-full h-auto rounded-lg shadow-sm"
+                              />
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </div>
+
+                      {/* Ticket Section */}
+                      <div className="w-full mt-6">
+                        <Typography variant="h6" className="font-medium mb-4">
+                          Tickets
+                        </Typography>
+                        <Grid container spacing={3}>
+                          {tickets.length > 0 ? (
+                            tickets.map((ticket, index) => (
+                              <Grid item xs={12} sm={6} md={4} key={index}>
+                                <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                                  <CardContent className="flex flex-col gap-4">
+                                    <Typography variant="h6" className="font-semibold">
+                                      {ticket.Name}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                      Type: {ticket.Type}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                      Description: {ticket.Description || 'No description available'}
+                                    </Typography>
+                                    <Typography variant="body1" color="primary" className="font-medium">
+                                      Price: ${ticket.Price}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color={ticket.Quantity > 0 ? 'success.main' : 'error.main'}
+                                    >
+                                      Quantity: {ticket.Quantity > 0 ? `${ticket.Quantity} Available` : 'Sold Out'}
+                                    </Typography>
+                                    {/* Refund Button */}
+                                    <Button
+                                      variant="contained"
+                                      color="secondary"
+                                      onClick={() => console.log("refund click")}
+                                      disabled={ticket.Quantity === 0}
+                                    >
+                                      Refund
+                                    </Button>
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+                            ))
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              No tickets available for this event.
+                            </Typography>
+                          )}
+                        </Grid>
+
+                      </div>
+                    </div>
                   </Grid>
-                </div>
 
-                {/* Ticket Section */}
-                <div className="w-full mt-6">
-                  <Typography variant="h6" className="font-medium mb-4">
-                    Tickets
-                  </Typography>
-                  <Grid container spacing={3}>
-  {tickets.length > 0 ? (
-    tickets.map((ticket, index) => (
-      <Grid item xs={12} sm={6} md={4} key={index}>
-        <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-300">
-          <CardContent className="flex flex-col gap-4">
-            <Typography variant="h6" className="font-semibold">
-              {ticket.Name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Type: {ticket.Type}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Description: {ticket.Description || 'No description available'}
-            </Typography>
-            <Typography variant="body1" color="primary" className="font-medium">
-              Price: ${ticket.Price}
-            </Typography>
-            <Typography
-              variant="body2"
-              color={ticket.Quantity > 0 ? 'success.main' : 'error.main'}
-            >
-              Quantity: {ticket.Quantity > 0 ? `${ticket.Quantity} Available` : 'Sold Out'}
-            </Typography>
-            {/* Refund Button */}
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => console.log("refund click")}
-              disabled={ticket.Quantity === 0}
-            >
-              Refund
-            </Button>
-          </CardContent>
-        </Card>
-      </Grid>
-    ))
-  ) : (
-    <Typography variant="body2" color="text.secondary">
-      No tickets available for this event.
-    </Typography>
-  )}
-</Grid>
+                  {/* Right side: Event Details and Tickets */}
+                  <Grid item lg={7} md={7} xs={12}>
+                    <div className="flex flex-col gap-6">
+                      <Typography variant="h5" className="font-semibold">
+                        Event Details
+                      </Typography>
+                      <Divider className="mb-4" />
 
-                </div>
-              </div>
-            </Grid>
+                      <div className="flex flex-col gap-4">
+                        <Typography variant="h6" className="font-medium">Description</Typography>
+                        <div
+                          className="text-sm"
+                          dangerouslySetInnerHTML={{ __html: event?.Description }}
+                        />
+                      </div>
 
-            {/* Right side: Event Details and Tickets */}
-            <Grid item lg={7} md={7} xs={12}>
-              <div className="flex flex-col gap-6">
-                <Typography variant="h5" className="font-semibold">
-                  Event Details
-                </Typography>
-                <Divider className="mb-4" />
+                      <div className="flex flex-col gap-4">
+                        <Typography variant="h6" className="font-medium">Email Description</Typography>
+                        <div
+                          className="text-sm"
+                          dangerouslySetInnerHTML={{ __html: event?.EmailDescription }}
+                        />
+                      </div>
 
-                <div className="flex flex-col gap-4">
-                  <Typography variant="h6" className="font-medium">Description</Typography>
-                  <div
-                    className="text-sm"
-                    dangerouslySetInnerHTML={{ __html: event?.Description }}
-                  />
-                </div>
+                      <div className="flex items-center gap-4">
+                        <Typography className="font-medium" color="text.primary">
+                          Start Time:
+                        </Typography>
+                        <Typography>{new Date(event?.StartTime).toLocaleString()}</Typography>
+                      </div>
 
-                <div className="flex flex-col gap-4">
-                  <Typography variant="h6" className="font-medium">Email Description</Typography>
-                  <div
-                    className="text-sm"
-                    dangerouslySetInnerHTML={{ __html: event?.EmailDescription }}
-                  />
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <Typography className="font-medium" color="text.primary">
-                    Start Time:
-                  </Typography>
-                  <Typography>{new Date(event?.StartTime).toLocaleString()}</Typography>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <Typography className="font-medium" color="text.primary">
-                    End Time:
-                  </Typography>
-                  <Typography>{new Date(event?.EndTime).toLocaleString()}</Typography>
-                </div>
-              </div>
-            </Grid>
-          </Grid>
-          <Grid container spacing={4}>
-          <Grid item lg={12} md={12} xs={12}>
-             {/* RSVP Section */}
-             <div className="w-full mt-6">
+                      <div className="flex items-center gap-4">
+                        <Typography className="font-medium" color="text.primary">
+                          End Time:
+                        </Typography>
+                        <Typography>{new Date(event?.EndTime).toLocaleString()}</Typography>
+                      </div>
+                    </div>
+                  </Grid>
+                </Grid>
+                <Grid container spacing={4}>
+                  <Grid item lg={12} md={12} xs={12}>
+                    {/* RSVP Section */}
+                    <div className="w-full mt-6">
                       <Typography variant="h6" className="font-medium mb-2">
                         RSVP List
                       </Typography>
@@ -603,48 +621,48 @@ const handleSearchChange = (
                         </Button>
 
                         <Button
-            variant="outlined"
-            startIcon={<Email />}
-            onClick={handleOpenDialog}
-          >
-            Send Email
-          </Button>
+                          variant="outlined"
+                          startIcon={<Email />}
+                          onClick={handleOpenDialog}
+                        >
+                          Send Email
+                        </Button>
                       </div>
                       {/* Dropdown and Add Button */}
-      <div className="flex gap-3 mb-4">
-        <FormControl fullWidth>
-          <Autocomplete
-  options={userProfiles}
-  getOptionLabel={(option: any) => option.Username || ''}
-  value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfile) || null}
-  onChange={(event, newValue) => setSelectedProfile(newValue?.ProfileId || null)}
-  onInputChange={handleSearchChange}
-  ListboxProps={{
-    onScroll: handleScroll, // Attach the scroll event handler
-  }}
-  loading={loading}
-  renderInput={(params) => (
-    <TextField
-      {...params}
-      label="Select User Profile"
-      InputProps={{
-        ...params.InputProps,
-        endAdornment: (
-          <>
-            {loading ? <CircularProgress color="inherit" size={20} /> : null}
-            {params.InputProps.endAdornment}
-          </>
-        ),
-      }}
-    />
-  )}
-/>
+                      <div className="flex gap-3 mb-4">
+                        <FormControl fullWidth>
+                          <Autocomplete
+                            options={userProfiles}
+                            getOptionLabel={(option: any) => option.Username || ''}
+                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfile) || null}
+                            onChange={(event, newValue) => setSelectedProfile(newValue?.ProfileId || null)}
+                            onInputChange={handleSearchChange}
+                            ListboxProps={{
+                              onScroll: handleScroll, // Attach the scroll event handler
+                            }}
+                            loading={loading}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Select User Profile"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  endAdornment: (
+                                    <>
+                                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                      {params.InputProps.endAdornment}
+                                    </>
+                                  ),
+                                }}
+                              />
+                            )}
+                          />
 
-        </FormControl>
-        <Button variant="contained" color="primary" onClick={(e)=>handleAddRSVP(e)}>
-          Add RSVP
-        </Button>
-      </div>
+                        </FormControl>
+                        <Button variant="contained" color="primary" onClick={(e) => handleAddRSVP(e)}>
+                          Add RSVP
+                        </Button>
+                      </div>
                       <DataGrid
                         rows={rsvp}
                         columns={rsvpColumns}
@@ -658,7 +676,7 @@ const handleSearchChange = (
                         pageSizeOptions={[5]}
                         checkboxSelection
                         disableRowSelectionOnClick
-                        getRowId={(row:any) => row.ProfileId}
+                        getRowId={(row: any) => row.ProfileId}
                       />
                     </div>
 
@@ -684,32 +702,32 @@ const handleSearchChange = (
                           Export PDF
                         </Button>
                         <Button
-            variant="outlined"
-            startIcon={<Email />}
-            onClick={handleOpenDialog}
-          >
-            Send Email
-          </Button>
+                          variant="outlined"
+                          startIcon={<Email />}
+                          onClick={handleOpenDialog}
+                        >
+                          Send Email
+                        </Button>
                       </div>
                       <div className="flex gap-3 mb-4">
-        <FormControl fullWidth>
-          <InputLabel id="user-profile-select-label">Select User Profile</InputLabel>
-          <Select
-            labelId="user-profile-select-label"
-            value={selectedProfile}
-            onChange={(e) => setSelectedProfile(e.target.value)}
-          >
-            {userProfiles?.length > 0 && userProfiles.map((profile:any) => (
-              <MenuItem key={profile.ProfileId} value={profile.ProfileId}>
-                {profile.Username} {/* Replace with the appropriate display field */}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Button variant="contained" color="primary" onClick={(e)=>handleAddRSVP(e)}>
-          Add Attendees
-        </Button>
-      </div>
+                        <FormControl fullWidth>
+                          <InputLabel id="user-profile-select-label">Select User Profile</InputLabel>
+                          <Select
+                            labelId="user-profile-select-label"
+                            value={selectedProfile}
+                            onChange={(e) => setSelectedProfile(e.target.value)}
+                          >
+                            {userProfiles?.length > 0 && userProfiles.map((profile: any) => (
+                              <MenuItem key={profile.ProfileId} value={profile.ProfileId}>
+                                {profile.Username} {/* Replace with the appropriate display field */}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Button variant="contained" color="primary" onClick={(e) => handleAddRSVP(e)}>
+                          Add Attendees
+                        </Button>
+                      </div>
                       <DataGrid
                         rows={attendees}
                         columns={attendeeColumns}
@@ -723,45 +741,45 @@ const handleSearchChange = (
                         pageSizeOptions={[5]}
                         checkboxSelection
                         disableRowSelectionOnClick
-                        getRowId={(row:any) => row.ProfileId}
+                        getRowId={(row: any) => row.ProfileId}
                       />
                     </div>
-          </Grid>
+                  </Grid>
+                </Grid>
+
+              </CardContent>
+            )}
           </Grid>
 
-        </CardContent>
-      )}
-    </Grid>
-
-    <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
-        <DialogTitle>Send Email</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Subject"
-            variant="outlined"
-            value={emailSubject}
-            onChange={(e) => setEmailSubject(e.target.value)}
-            margin="normal"
-          />
-          <ReactQuill
-            theme="snow"
-            value={emailBody}
-            onChange={setEmailBody}
-            placeholder="Write your email here..."
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleSendEmail} variant="contained" color="primary">
-            Send
-          </Button>
-        </DialogActions>
+          <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+            <DialogTitle>Send Email</DialogTitle>
+            <DialogContent>
+              <TextField
+                fullWidth
+                label="Subject"
+                variant="outlined"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                margin="normal"
+              />
+              <ReactQuill
+                theme="snow"
+                value={emailBody}
+                onChange={setEmailBody}
+                placeholder="Write your email here..."
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog} color="secondary">
+                Cancel
+              </Button>
+              <Button onClick={handleSendEmail} variant="contained" color="primary">
+                Send
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Grid>
       </Dialog>
-  </Grid>
-</Dialog>
 
 
     </>
