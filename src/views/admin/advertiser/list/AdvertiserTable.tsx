@@ -422,7 +422,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       }),
       columnHelper.accessor('CreatedAt', {
         header: 'Created Date',
-        cell: ({ row }) => <Typography>{format(new Date(row.original.CreatedAt), 'dd/MM/yyyy HH:mm')}</Typography>
+        cell: ({ row }) => <Typography>{format(new Date(row.original.CreatedAt), 'dd/MM/yyyy')}</Typography>
       }),
       columnHelper.accessor('action', {
         header: 'Action',
