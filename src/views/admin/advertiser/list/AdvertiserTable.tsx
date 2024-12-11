@@ -60,7 +60,7 @@ interface UserType {
   AccountType: string;
   Title: string;
   Price: string;
-  AppOrWeb:string;
+  AppOrWeb: string;
   CreatedAt: string;
 }
 
@@ -404,13 +404,13 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           )
         }
       },
-      columnHelper.accessor('Email', {
-        header: 'Email',
-        cell: ({ row }) => row.original.Email && <Typography>{row.original.Email}</Typography>
-      }),
       columnHelper.accessor('Username', {
         header: 'Username',
         cell: ({ row }) => row.original.Username && <Typography>{row.original.Username}</Typography>
+      }),
+      columnHelper.accessor('Email', {
+        header: 'Email',
+        cell: ({ row }) => row.original.Email && <Typography>{row.original.Email}</Typography>
       }),
       columnHelper.accessor('AccountType', {
         header: 'Type',
