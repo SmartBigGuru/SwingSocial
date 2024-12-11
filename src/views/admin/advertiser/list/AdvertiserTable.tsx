@@ -60,6 +60,7 @@ interface UserType {
   AccountType: string;
   Title: string;
   Price: string;
+  AppOrWeb:string;
   CreatedAt: string;
 }
 
@@ -415,11 +416,16 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         header: 'Type',
         cell: ({ row }) => <Typography>{row.original.AccountType}</Typography>
       }),
+      columnHelper.accessor('AppOrWeb', {
+        header: 'AppOrWeb',
+        cell: ({ row }) => <Typography>{row.original.AppOrWeb}</Typography>
+      }),
       columnHelper.accessor('Title', {
         header: 'Subscription Status',
         cell: ({ row }) => (row.original.Title === "Free Member") ? <div><Chip label={`${row.original.Title} $${row.original.Price}`} color='primary' variant='outlined' /></div> :
           <div><Chip label={`${row.original.Title} $${row.original.Price}`} color='success' variant='outlined'></Chip></div>
       }),
+
       columnHelper.accessor('CreatedAt', {
         header: 'Created Date',
         cell: ({ row }) => <Typography>{format(new Date(row.original.CreatedAt), 'MM/dd/yyyy')}</Typography>

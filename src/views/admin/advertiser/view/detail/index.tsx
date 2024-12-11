@@ -304,7 +304,14 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                 Preferences
               </Typography>
               <Divider className="mb-4" />
-              <Typography>{advertiser?.About || 'No additional information provided.'}</Typography>
+              <div>
+  <Typography>
+    {advertiser?.About
+      ? advertiser.About.replace(/<\/?[^>]+(>|$)/g, "")
+      : 'No additional information provided.'}
+  </Typography>
+</div>
+
               <div className="mt-4">
                 <Typography variant="body2" color="textSecondary">
                   Swing Style Tags:

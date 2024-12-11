@@ -96,9 +96,8 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const isMdScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('md'))
   const isLgScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'))
   const [userProfiles, setUserProfiles] = useState<any[]>([]); // User profiles state
-  const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
-
-  console.log(selectedProfile, "=====userProfiles");
+  const [selectedProfileRsvp, setSelectedProfileRSVP] = useState(''); // Selected user profile
+  const [selectedProfileAttendee, setSelectedProfileAttendee] = useState(''); // Selected user profile
 
   const [openDialog, setOpenDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
@@ -200,7 +199,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ eventId, selectedProfile }),
+        body: JSON.stringify({ eventId, selectedProfileRsvp }),
       });
 
       if (!response.ok) {
@@ -211,7 +210,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       const newRSVP = await response.json();
 
       // Update the local state by adding the new RSVP
-      setRSVP(prevRSVP => [...prevRSVP, { ProfileId: selectedProfile, ...newRSVP }]);
+      setRSVP(prevRSVP => [...prevRSVP, { ProfileId: selectedProfileRsvp, ...newRSVP }]);
       console.log('RSVP added successfully');
     } catch (error: any) {
       console.error('Error adding RSVP:', error.message);
@@ -634,8 +633,8 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                           <Autocomplete
                             options={userProfiles}
                             getOptionLabel={(option: any) => option.Username || ''}
-                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfile) || null}
-                            onChange={(event, newValue) => setSelectedProfile(newValue?.ProfileId || null)}
+                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfileRsvp) || null}
+                            onChange={(event, newValue) => setSelectedProfileRSVP(newValue?.ProfileId || null)}
                             onInputChange={handleSearchChange}
                             ListboxProps={{
                               onScroll: handleScroll, // Attach the scroll event handler
@@ -715,8 +714,8 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                           <Autocomplete
                             options={userProfiles}
                             getOptionLabel={(option: any) => option.Username || ''}
-                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfile) || null}
-                            onChange={(event, newValue) => setSelectedProfile(newValue?.ProfileId || null)}
+                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfileAttendee) || null}
+                            onChange={(event, newValue) => setSelectedProfileAttendee(newValue?.ProfileId || null)}
                             onInputChange={handleSearchChange}
                             ListboxProps={{
                               onScroll: handleScroll, // Attach the scroll event handler
