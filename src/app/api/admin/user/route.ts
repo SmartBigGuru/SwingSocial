@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     if (userId) {
       console.log('Fetching user with ID:', userId);
 
-      const query = `SELECT * FROM public.admin_getoneprofile($1)`;
+      const query = `SELECT * FROM public.web_one_profile($1)`;
       const values = [userId];
       const result = await pool.query(query, values);
 

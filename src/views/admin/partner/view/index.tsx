@@ -710,19 +710,35 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         </Button>
                       </div>
                       <div className="flex gap-3 mb-4">
+
                         <FormControl fullWidth>
-                          <InputLabel id="user-profile-select-label">Select User Profile</InputLabel>
-                          <Select
-                            labelId="user-profile-select-label"
-                            value={selectedProfile}
-                            onChange={(e) => setSelectedProfile(e.target.value)}
-                          >
-                            {userProfiles?.length > 0 && userProfiles.map((profile: any) => (
-                              <MenuItem key={profile.ProfileId} value={profile.ProfileId}>
-                                {profile.Username} {/* Replace with the appropriate display field */}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                          <Autocomplete
+                            options={userProfiles}
+                            getOptionLabel={(option: any) => option.Username || ''}
+                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfile) || null}
+                            onChange={(event, newValue) => setSelectedProfile(newValue?.ProfileId || null)}
+                            onInputChange={handleSearchChange}
+                            ListboxProps={{
+                              onScroll: handleScroll, // Attach the scroll event handler
+                            }}
+                            loading={loading}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Select User Profile"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  endAdornment: (
+                                    <>
+                                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                      {params.InputProps.endAdornment}
+                                    </>
+                                  ),
+                                }}
+                              />
+                            )}
+                          />
+
                         </FormControl>
                         <Button variant="contained" color="primary" onClick={(e) => handleAddRSVP(e)}>
                           Add Attendees

@@ -76,7 +76,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const { refresh } = props
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [advertiser, setAdvertiser] = useState<AdvertiserType | undefined>(undefined)
+  const [advertiser, setAdvertiser] = useState<any>({})
   const [contract, setContract] = useState<ContractType[] | undefined>(undefined)
   const isSmScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('sm'))
   const isMdScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('md'))
@@ -166,195 +166,162 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     return output.length > 0 ? output.join(', ') + ' ago' : 'Today';
   }
 
-  const contractList = (
-    contract &&
-    <Timeline sx={{
-      [`& .${timelineItemClasses.root}:before`]: {
-        flex: 0,
-        padding: 0,
-      },
-    }}>
-      {
-        contract.map((item, id) => (
-          <div key={id}>
-            <TimelineItem >
-              <TimelineSeparator>
-                <TimelineDot color={
-                  item.status === 'Active' ? 'success' :
-                    item.status === 'Pending' ? 'primary' :
-                      'warning'
-                } />
-                <TimelineConnector />
-              </TimelineSeparator>
-              <TimelineContent >
-                <div className='flex items-center justify-between flex-wrap gap-x-4 pbe-1.5'>
-
-                  <Typography className='font-medium' color='text.primary'>
-                    {`#CTR-${item.contract_id} (${item.contract_name})`}
-                  </Typography>
-                  <Typography variant='caption'>{DateDifference(item.created_date)}</Typography>
-                </div>
-                <Grid container xs={12} spacing={2}>
-
-                  <Grid item className="container gap-2" xs={12} md={4} spacing={4}>
-                    <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-calendar-schedule-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span>
-                          {item.start_date} -
-                        </span>
-                        <span>{item.end_date}</span>
-                      </div>
-                    </div>
-                    <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-money-dollar-circle-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span className="text-sm text-muted-foreground">
-                          Budget: ${item.budget_limit}
-                        </span>
-                      </div>
-                    </div>
-                    {/* <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-bank-card-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span className="text-sm text-muted-foreground">
-
-                        </span>
-                      </div>
-                    </div> */}
-                  </Grid>
-
-                  <Grid item className="container gap-2" xs={12} md={4} spacing={4}>
-                    <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-file-text-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span className="text-sm text-muted-foreground">
-                          Offer: {Array.isArray(item.offer) ? item.offer.length : 0}
-                        </span>
-                      </div>
-                    </div>
-                    <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-group-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span className="text-sm text-muted-foreground">
-                          Partner: {Array.isArray(item.offer) ? item.offer.length : 0}
-                        </span>
-                      </div>
-                    </div>
-                    <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-gradienter-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span className="text-sm text-muted-foreground">
-                          Status: {item.status}
-                        </span>
-                      </div>
-                    </div>
-                  </Grid>
-
-                  <Grid item className="container gap-2" xs={12} md={4} spacing={4}>
-                    <Typography>Performance Metrics:</Typography>
-                    <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-focus-2-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span className="text-sm text-muted-foreground">
-                          Retainers Generated: {item.retainers}
-                        </span>
-                      </div>
-                    </div>
-                    <div className='flex items-center gap-2 pb-1'>
-                      <i className="ri-refresh-line h-5 w-5 text-muted-foreground" />
-                      <div className='flex items-center flex-wrap gap-2 text-sm text-muted-foreground'>
-                        <span className="text-sm text-muted-foreground">
-                          Return Rates: {item.return_rate}%
-                        </span>
-                      </div>
-                    </div>
-                  </Grid>
-
-                </Grid>
-              </TimelineContent>
-            </TimelineItem>
-          </div>
-        )
-        )
-      }
-    </Timeline>
-  )
-
   return (
     <>
-     <Dialog
+  <Dialog
   open={open}
   scroll="paper"
   onClose={() => {
-    setAdvertiser(undefined)
-    setContract(undefined)
-    setOpen(false)
+    setAdvertiser(undefined);
+    setContract(undefined);
+    setOpen(false);
   }}
-  maxWidth='sm'
+  maxWidth="lg"
   fullWidth
-  aria-labelledby='max-width-dialog-title'>
-  <Grid container className="scrollbar-custom overflow-y-auto p-4">
-    <Grid item lg={12} md={12}>
-      {advertiser && (
-        <CardContent className='flex flex-col gap-6'>
-          <Grid container spacing={4}>
-            {/* Left side: Avatar and basic info */}
-            <Grid item lg={5} md={5} xs={12} className="flex flex-col items-center">
-              <div className='flex flex-col gap-6'>
-                <CustomAvatar
-                  alt='user-profile'
-                  src={advertiser?.Avatar || '/images/avatars/default.png'}
-                  variant='rounded'
-                  size={120}
-                />
-                <Typography variant='h5' className='font-semibold'>{advertiser?.Username}</Typography>
-                <Typography variant='subtitle1' color="text.secondary">{advertiser?.Title}</Typography>
-                <Chip label={advertiser?.AccountType} color='primary' size='small' variant='tonal' />
+  aria-labelledby="user-profile-dialog"
+>
+  <div className="relative">
+    {/* Banner Section */}
+    <div
+      className="h-48 w-full bg-cover bg-center"
+      style={{
+        backgroundImage: `url(${advertiser?.ProfileBanner || '/images/banners/default-banner.jpg'})`,
+      }}
+    >
+    </div>
+
+    {/* Avatar and Basic Info */}
+    <div className="relative -mt-16 px-6">
+      <div className="flex items-center gap-6">
+        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+          <img
+            src={advertiser?.Avatar || '/images/avatars/default-avatar.png'}
+            alt="user-avatar"
+            className="object-cover w-full h-full"
+          />
+        </div>
+        <div className="text-white mt-4">
+          <Typography variant="h4" className="font-semibold" style={{color:'white'}}>
+            {advertiser?.Username || 'Unknown User'}
+          </Typography>
+          <Typography variant="subtitle1" className="opacity-90">
+            {advertiser?.Tagline || 'No tagline available'}
+          </Typography>
+          <Chip
+            label={advertiser?.AccountType || 'N/A'}
+            color="primary"
+            size="small"
+            variant="filled"
+          />
+        </div>
+      </div>
+    </div>
+
+    {/* Content Section */}
+    <CardContent className="mt-8">
+    <Typography variant="subtitle1">
+            Email:   <Typography variant="subtitle1" className="opacity-90">
+            {advertiser?.Email || 'Email not provided'}
+          </Typography>
+          </Typography>
+          <Typography variant="subtitle1">
+            Subscription:   <Chip
+            label={advertiser?.Subscription || 'N/A'}
+            color={advertiser?.Subscription == "FreeUser" ?  "primary":"success"}
+            size="small"
+            variant="filled"
+            sx={{mb:1}}
+          />
+          </Typography>
+      <Grid container spacing={4}>
+        {/* Left Column: Overview Section */}
+
+        <Grid item lg={4} md={5} xs={12}>
+          <div className="flex flex-col gap-6 bg-gray-50 p-4 rounded-lg shadow-sm">
+            <Typography variant="h6" className="font-semibold">
+              Profile Overview
+            </Typography>
+            <Divider />
+            <div>
+              <Typography variant="body2" color="textSecondary">
+                Location:
+              </Typography>
+              <Typography variant="body1">{advertiser?.Location || 'Not provided'}</Typography>
+            </div>
+            <div>
+              <Typography variant="body2" color="textSecondary">
+                Sexual Orientation:
+              </Typography>
+              <Typography variant="body1">{advertiser?.SexualOrientation || 'N/A'}</Typography>
+            </div>
+            <div>
+              <Typography variant="body2" color="textSecondary">
+                Gender:
+              </Typography>
+              <Typography variant="body1">{advertiser?.Gender || 'Not specified'}</Typography>
+            </div>
+          </div>
+        </Grid>
+
+        {/* Right Column: Detailed Information */}
+        <Grid item lg={8} md={7} xs={12}>
+          <div className="flex flex-col gap-6">
+            <div>
+              <Typography variant="h6" className="font-semibold">
+                Personal Details
+              </Typography>
+              <Divider className="mb-4" />
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="textSecondary">
+                    Body Type:
+                  </Typography>
+                  <Typography>{advertiser?.BodyType || 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="textSecondary">
+                    Hair Color:
+                  </Typography>
+                  <Typography>{advertiser?.HairColor || 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="textSecondary">
+                    Eye Color:
+                  </Typography>
+                  <Typography>{advertiser?.EyeColor || 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="textSecondary">
+                    Miles:
+                  </Typography>
+                  <Typography>{advertiser?.miles?.toFixed(2) || 'N/A'}</Typography>
+                </Grid>
+              </Grid>
+            </div>
+
+            <div>
+              <Typography variant="h6" className="font-semibold">
+                Preferences
+              </Typography>
+              <Divider className="mb-4" />
+              <Typography>{advertiser?.About || 'No additional information provided.'}</Typography>
+              <div className="mt-4">
+                <Typography variant="body2" color="textSecondary">
+                  Swing Style Tags:
+                </Typography>
+                <Typography>
+                  {advertiser?.SwingStyleTags?.join(', ') || 'No preferences listed.'}
+                </Typography>
               </div>
-            </Grid>
-
-            {/* Right side: Detailed information */}
-            <Grid item lg={7} md={7} xs={12}>
-              <div className='flex flex-col gap-4'>
-                <Typography variant='h5' className='font-semibold'>Details</Typography>
-                <Divider className='mb-4' />
-
-                <div className='flex items-center gap-4'>
-                  <Typography className='font-medium' color='text.primary'>
-                    Username:
-                  </Typography>
-                  <Typography>{advertiser?.Username}</Typography>
-                </div>
-
-                <div className='flex items-center gap-4'>
-                  <Typography className='font-medium' color='text.primary'>
-                    Account Type:
-                  </Typography>
-                  <Typography>{advertiser?.AccountType}</Typography>
-                </div>
-
-                <div className='flex items-center gap-4'>
-                  <Typography className='font-medium' color='text.primary'>
-                    Price:
-                  </Typography>
-                  <Typography>{advertiser?.Price}</Typography>
-                </div>
-
-                <div className='flex items-center gap-4'>
-                  <Typography className='font-medium' color='text.primary'>
-                    Created At:
-                  </Typography>
-                  <Typography>{new Date(advertiser?.CreatedAt).toLocaleString()}</Typography>
-                </div>
-              </div>
-            </Grid>
-          </Grid>
-        </CardContent>
-      )}
-    </Grid>
-  </Grid>
+            </div>
+          </div>
+        </Grid>
+      </Grid>
+    </CardContent>
+  </div>
 </Dialog>
+
+
 
     </>
   )
