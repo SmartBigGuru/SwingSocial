@@ -97,6 +97,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
       >
         Event Manager
       </MenuItem>
+      <MenuItem href={(`/admin/qa/promocode-manage`)}
+        icon={<i className='ri-calendar-event-line' />}
+        exactMatch={false}
+        activeUrl='/admin/qa/promocode-manage'
+      >
+        Promocode Manager
+      </MenuItem>
       <MenuItem href={(`/admin/qa/invoice`)}
         icon={<i className='ri-spam-line' />}
         exactMatch={false}
@@ -137,6 +144,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         activeUrl='/admin/sp/partner-manage'
       >
         Event Manager
+      </MenuItem>
+      <MenuItem href={(`/admin/sp/promocode-manage`)}
+        icon={<i className='ri-calendar-event-line' />}
+        exactMatch={false}
+        activeUrl='/admin/sp/promocode-manage'
+      >
+        Promocode Manager
       </MenuItem>
       <MenuItem href={(`/admin/sp/invoice`)}
         icon={<i className='ri-spam-line' />}
@@ -213,6 +227,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         activeUrl='/admin/um/partner-manage'
       >
         Event Manage
+      </MenuItem>
+      <MenuItem href={(`/admin/um/promocode-manage`)}
+        icon={<i className='ri-calendar-event-line' />}
+        exactMatch={false}
+        activeUrl='/admin/um/promocode-manage'
+      >
+        Promocode Manager
       </MenuItem>
     </>
   )
