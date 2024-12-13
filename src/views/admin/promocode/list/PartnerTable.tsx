@@ -58,7 +58,7 @@ type TableAction = PartnerType & {
   Address: string;
   Venue: string;
   Category: string;
-  PromoCodeText:string;
+  PromoCodeText: string;
 
 }
 
@@ -196,15 +196,81 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
   }, [searchParams])
 
   const DeactiveAction = async (userId: string) => {
+
+    console.log(userId);
     try {
-      const { error } = await supabase
-        .from('partners')
-        .update({ status: 'Deactive' })
-        .eq('auth_id', userId)
 
-      if (error) throw error
+      const response = await fetch('/api/admin/promocode/deactive', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: userId
+        })
+      })
 
-      fetchData()
+      console.log(response)
+
+      if (response.ok) {
+        const responseData = await response.json();
+        toast.success('Promo deactivated successfully!', {
+          autoClose: 5000,
+          type: 'success',
+        });
+
+        console.log('Response:', responseData);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Failed to deactive promo code!', {
+          autoClose: 5000,
+          type: 'error',
+        });
+        console.error('Error Response:', errorData);
+      }
+
+    } catch (error: any) {
+      toast.error(`${error.message}`, {
+        autoClose: 3000,
+        type: 'error'
+      })
+    }
+  }
+
+  const ActiveAction = async (userId: string) => {
+
+    console.log(userId);
+    try {
+
+      const response = await fetch('/api/admin/promocode/active', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: userId
+        })
+      })
+
+      console.log(response)
+
+      if (response.ok) {
+        const responseData = await response.json();
+        toast.success('Promo activated successfully!', {
+          autoClose: 5000,
+          type: 'success',
+        });
+
+        console.log('Response:', responseData);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Failed to deactive promo code!', {
+          autoClose: 5000,
+          type: 'error',
+        });
+        console.error('Error Response:', errorData);
+      }
+
     } catch (error: any) {
       toast.error(`${error.message}`, {
         autoClose: 3000,
@@ -251,6 +317,16 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
           );
         }
       }),
+      // columnHelper.accessor('Active', {
+      //   header: 'Status',
+      //   cell: ({ row }) => {
+      //     return (
+      //       <Typography>
+      //         {row.original.Active}
+      //       </Typography>
+      //     );
+      //   }
+      // }),
 
       columnHelper.accessor('action', {
         header: 'Action',
@@ -288,11 +364,11 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                     },
                     className: 'flex items-center gap-2'
                   }
-                },{
+                }, {
                   text: 'Activate',
                   menuItemProps: {
                     onClick: () => {
-                      DeactiveAction(row.original.Id); // Use Id from new data
+                      ActiveAction(row.original.Id); // Use Id from new data
                     },
                     className: 'flex items-center gap-2'
                   }
