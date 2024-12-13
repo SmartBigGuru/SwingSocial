@@ -17,6 +17,8 @@ import { supabase } from '@/utils/supabase'
 import tableStyles from '@core/styles/table.module.css'
 import OptionMenu from '@/@core/components/option-menu'
 import DetailView, { DetailViewHandle } from '../view'
+import EditPromocodeDialogue from '../edit'
+import type { EditPromocodeHandle } from '../edit';
 
 declare module '@tanstack/table-core' {
   interface FilterFns {
@@ -58,7 +60,7 @@ type TableAction = PartnerType & {
   Address: string;
   Venue: string;
   Category: string;
-  PromoCodeText:string;
+  PromoCodeText: string;
 
 }
 
@@ -73,7 +75,8 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
 }
 
 export interface RefreshHandle {
-  refresh: () => void
+  refresh: () => void;
+  id: () => void;
 }
 
 const columnHelper = createColumnHelper<TableAction>()
@@ -90,15 +93,20 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const [status, setStatus] = useState(searchParams.get('status') ?? '')
   const [company, setCompany] = useState(searchParams.get('company') ?? '')
+  const [promocodeDetail, setPromocodeDetail] = useState<any>('')
 
   const [userProfiles, setUserProfiles] = useState([]); // User profiles state
   const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
   const router = useRouter()
   const detailRef = useRef<DetailViewHandle>(null)
+  const editPromocodeRef = useRef<EditPromocodeHandle>(null)
 
 
   useImperativeHandle(ref, () => ({
     refresh: () => {
+      fetchData();
+    },
+    id: () => {
       fetchData();
     }
   }))
@@ -274,9 +282,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                 {
                   text: 'Edit',
                   menuItemProps: {
-                    onClick: () => {
-                      // Implement Edit action
-                    },
+                    onClick: () => { setPromocodeDetail(row.original); editPromocodeRef.current?.open() },
                     className: 'flex items-center gap-2'
                   }
                 },
@@ -288,7 +294,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                     },
                     className: 'flex items-center gap-2'
                   }
-                },{
+                }, {
                   text: 'Activate',
                   menuItemProps: {
                     onClick: () => {
@@ -452,6 +458,13 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
         />
       </Card>
       <DetailView ref={detailRef} refresh={fetchData} />
+      <EditPromocodeDialogue
+        ref={editPromocodeRef}
+        promocodeDetail={promocodeDetail}
+        refresh={fetchData}
+        id={promocodeDetail?.Id}
+      />
+
     </>
   )
 })

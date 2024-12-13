@@ -17,7 +17,8 @@ import { supabase } from '@/utils/supabase'
 import tableStyles from '@core/styles/table.module.css'
 import OptionMenu from '@/@core/components/option-menu'
 import DetailView, { DetailViewHandle } from '../view'
-
+import EditEventDialogue from '../edit'
+import type { EditEventHandle } from '../edit';
 declare module '@tanstack/table-core' {
   interface FilterFns {
     fuzzy: FilterFn<unknown>
@@ -88,11 +89,13 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const [status, setStatus] = useState(searchParams.get('status') ?? '')
   const [company, setCompany] = useState(searchParams.get('company') ?? '')
+  const [eventDetail, setEventDetail] = useState<any>('')
 
   const [userProfiles, setUserProfiles] = useState([]); // User profiles state
   const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
   const router = useRouter()
   const detailRef = useRef<DetailViewHandle>(null)
+  const editEventRef = useRef<EditEventHandle>(null)
 
 
   useImperativeHandle(ref, () => ({
@@ -289,6 +292,8 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   menuItemProps: {
                     onClick: () => {
                       // Implement Edit action
+                      setEventDetail(row.original);
+                      editEventRef.current?.open();
                     },
                     className: 'flex items-center gap-2'
                   }
@@ -459,6 +464,12 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
         />
       </Card>
       <DetailView ref={detailRef} refresh={fetchData} />
+      <EditEventDialogue
+        ref={editEventRef}
+        eventDetail={eventDetail}
+        refresh={fetchData}
+        id={eventDetail?.Id}
+      />
     </>
   )
 })
