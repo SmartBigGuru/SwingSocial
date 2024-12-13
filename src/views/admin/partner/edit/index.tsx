@@ -367,7 +367,7 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
               Media Uploads
             </Typography>
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12}>
             <Card sx={{ maxWidth: 300, mx: "auto", boxShadow: 3 }}>
               {/* Image Preview */}
               <CardMedia

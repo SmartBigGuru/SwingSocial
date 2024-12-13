@@ -61,7 +61,7 @@ type TableAction = PartnerType & {
   Venue: string;
   Category: string;
   PromoCodeText: string;
-
+  Active:any;
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -325,16 +325,16 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
           );
         }
       }),
-      // columnHelper.accessor('Active', {
-      //   header: 'Status',
-      //   cell: ({ row }) => {
-      //     return (
-      //       <Typography>
-      //         {row.original.Active}
-      //       </Typography>
-      //     );
-      //   }
-      // }),
+      columnHelper.accessor('Active', {
+        header: 'Status',
+        cell: ({ row }) => {
+          return (
+            <Typography>
+              {row.original.Active==1?'Active':"Deactive"}
+            </Typography>
+          );
+        }
+      }),
 
       columnHelper.accessor('action', {
         header: 'Action',
@@ -345,16 +345,6 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
               iconButtonProps={{ size: 'medium' }}
               iconClassName='text-textSecondary text-[22px]'
               options={[
-                {
-                  text: 'View',
-                  menuItemProps: {
-                    onClick: () => {
-                      // Implement View action
-                      detailRef.current?.open(row.original.Id)
-                    },
-                    className: 'flex items-center gap-2'
-                  }
-                },
                 {
                   text: 'Edit',
                   menuItemProps: {
