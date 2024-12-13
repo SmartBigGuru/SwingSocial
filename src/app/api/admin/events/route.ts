@@ -12,8 +12,6 @@ import { NextResponse } from 'next/server'
 import { Pool } from 'pg';
 export const dynamic = 'force-dynamic';
 
-
-
 const pool = new Pool({
   user: 'clark',
   host: '199.244.49.83',
