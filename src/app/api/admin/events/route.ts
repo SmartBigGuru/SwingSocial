@@ -177,3 +177,34 @@ export async function DELETE(req: Request) {
   }
 }
 
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const {qeventid, qname,start , qend } = body;
+
+    if (!qeventid ) {
+      return NextResponse.json(
+        { error: 'Event ID  required to add update event.' },
+        { status: 400 }
+      );
+    }
+    // Call the SQL function to insert RSVP
+    const insertQuery = `SELECT * FROM event_edit_($1, $2, $3,$4)`;
+    const result = await pool.query(insertQuery, [qeventid, qname,start , qend ]);
+
+    if (result.rowCount === 0) {
+      return NextResponse.json(
+        { error: `Failed to add RSVP for Event ID ${qeventid}` },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json(
+      { message: `Event successfully Updated.` },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Failed to add Event:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
