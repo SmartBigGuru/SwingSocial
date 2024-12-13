@@ -1,8 +1,14 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { Autocomplete, Button, CircularProgress, Dialog, DialogActions, DialogContent, Divider, FormControl, FormControlLabel, Grid, TextField, Typography } from "@mui/material"
+import { Autocomplete, CardContent, CardActions, Box, Button, Card, CardMedia, CircularProgress, Dialog, DialogActions, DialogContent, Divider, FormControl, FormControlLabel, Grid, TextField, Typography, IconButton } from "@mui/material"
 import { toast } from "react-toastify";
+import { AddCircleOutline } from "@mui/icons-material";
+import dynamic from 'next/dynamic';
+
+// Dynamically import a rich-text editor (like React Quill)
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
 // MUI Imports
 export interface EditEventHandle {
   open: () => void;
@@ -187,9 +193,25 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
   }));
   const [eventCoverImage, setEventCoverImage] = useState<any>(null)
   const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
+  const [description, setDescription] = useState<any>('');
+  const [emailDescription, setEmailDescription] = useState<any>('');
+
+  const handleRemoveImage = (index: number) => {
+    // Remove image from both the preview and the file list
+    const updatedImages = [...eventData.images];
+    updatedImages.splice(index, 1);
+
+    const updatedFiles = [...selectedFiles];
+    updatedFiles.splice(index, 1);
+
+    setEventData({ ...eventData, images: updatedImages });
+    setSelectedFiles(updatedFiles);
+  };
   useEffect(() => {
     console.log(eventDetail, "=====eventDetail");
     if (eventDetail) {
+      setDescription(eventDetail.Description);
+      setEmailDescription(eventDetail.EmailDescription);
       setEventData({
         id: eventDetail.Id || '',
         startTime: eventDetail.StartTime || '',
@@ -243,17 +265,13 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
             />
           </Grid>
           <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              name="description"
-              label="Description"
-              autoComplete="off"
-              placeholder="Enter Description"
-              value={eventData.description}
-              onChange={(e) => setEventData({ ...eventData, description: e.target.value })}
+            <ReactQuill
+              theme="snow"
+              value={description}
+              onChange={setDescription}
+              placeholder="Write your Description here..."
             />
+
           </Grid>
 
           {/* Timing Information */}
@@ -349,77 +367,135 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
               Media Uploads
             </Typography>
           </Grid>
-          <Grid item xs={12}>
-            <div style={{ textAlign: 'center' }}>
+          <Grid item xs={6}>
+            <Card sx={{ maxWidth: 300, mx: "auto", boxShadow: 3 }}>
               {/* Image Preview */}
-              {eventData.coverImageUrl ? (
-                <img
-                  src={eventData.coverImageUrl}
-                  alt="Cover Preview"
-                  style={{ width: '200px', height: '200px', objectFit: 'cover', marginBottom: '16px' }}
-                />
-              ) : (
-                <p>No Image Selected</p>
-              )}
-              {/* File Input */}
-              <Button variant="contained" component="label" color="primary">
-                Upload Cover Image
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setEventCoverImage(file);
-                      const imageUrl = URL.createObjectURL(file);
-                      setEventData({ ...eventData, coverImageUrl: imageUrl });
-                    }
-                  }}
-                />
-              </Button>
-            </div>
-          </Grid>
-
-          <Grid item xs={12}>
-            <Button
-              variant="contained"
-              component="label"
-              color="primary"
-            >
-              Upload Multiple Images
-              <input
-                type="file"
-                hidden
-                multiple
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files) {
-                    const filesArray = Array.from(e.target.files);
-                    const previewUrls = filesArray.map((file) => URL.createObjectURL(file));
-
-                    // Update preview in eventData
-                    setEventData({
-                      ...eventData,
-                      images: [...(eventData.images || []), ...previewUrls],
-                    });
-
-                    // Update the selected files state
-                    setSelectedFiles((prevFiles) => [...prevFiles, ...filesArray]);
-                  }
+              <CardMedia
+                component="img"
+                image={eventData.coverImageUrl || "/placeholder-image.png"} // Placeholder for no image
+                alt="Cover Preview"
+                sx={{
+                  height: 200,
+                  objectFit: "cover",
+                  borderBottom: "1px solid #ddd",
                 }}
               />
-            </Button>
-            <Grid container spacing={2} style={{ marginTop: 10 }}>
-              {(eventData.images || []).map((image: any, index: Number) => (
-                <Grid item xs={3}>
-                  <img
-                    src={image}
-                    alt={`Gallery ${index}`}
-                    style={{ width: '100%', height: 'auto', borderRadius: 8 }}
+
+              {/* Card Content */}
+              <CardContent>
+                <Typography variant="h6" align="center" gutterBottom>
+                  Cover Image
+                </Typography>
+                <Typography variant="body2" color="textSecondary" align="center">
+                  Upload an image to set as the cover for your event.
+                </Typography>
+              </CardContent>
+
+              {/* Footer with Upload Button */}
+              <CardActions sx={{ justifyContent: "center", padding: "16px" }}>
+                <Button
+                  variant="contained"
+                  component="label"
+                  color="primary"
+                  fullWidth
+                  sx={{ textTransform: "none" }}
+                >
+                  Upload Cover Image
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setEventCoverImage(file);
+                        const imageUrl = URL.createObjectURL(file);
+                        setEventData({ ...eventData, coverImageUrl: imageUrl });
+                      }
+                    }}
                   />
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+
+
+          <Grid item xs={12}>
+            {/* Image Grid */}
+            <Grid container spacing={2}>
+              {/* Existing Images */}
+              {(eventData.images || []).map((image: any, index: number) => (
+                <Grid item xs={3} key={index}>
+                  <Card sx={{ borderRadius: 8 }}>
+                    {/* Image Preview */}
+                    <CardMedia
+                      component="img"
+                      image={image}
+                      alt={`Gallery ${index}`}
+                      sx={{
+                        height: 150,
+                        objectFit: "cover",
+                      }}
+                    />
+                    {/* Card Actions (Footer) */}
+                    <CardActions sx={{ justifyContent: "center" }}>
+                      <Button
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                        onClick={() => handleRemoveImage(index)}
+                      >
+                        Remove
+                      </Button>
+                    </CardActions>
+                  </Card>
                 </Grid>
               ))}
+
+              {/* Upload Box */}
+              <Grid item xs={3}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "2px dashed #ccc",
+                    borderRadius: 8,
+                    height: "85%",
+                    marginLeft: 3,
+                    aspectRatio: "1",
+                    cursor: "pointer",
+                    position: "relative",
+                  }}
+                  onClick={() => document.getElementById("file-input")?.click()}
+                >
+                  <input
+                    id="file-input"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        const filesArray = Array.from(e.target.files);
+                        const previewUrls = filesArray.map((file) => URL.createObjectURL(file));
+
+                        // Update preview in eventData
+                        setEventData({
+                          ...eventData,
+                          images: [...(eventData.images || []), ...previewUrls],
+                        });
+
+                        // Update the selected files state
+                        setSelectedFiles((prevFiles) => [...prevFiles, ...filesArray]);
+                      }
+                    }}
+                  />
+                  <IconButton color="primary" size="large" sx={{ p: 0 }}>
+                    <AddCircleOutline fontSize="large" />
+                  </IconButton>
+                </Box>
+              </Grid>
             </Grid>
           </Grid>
 
@@ -429,16 +505,14 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
               Additional Details
             </Typography>
           </Grid>
-          <Grid item xs={6}>
-            <TextField
-              fullWidth
-              name="emailDescription"
-              label="Email Description"
-              autoComplete="off"
-              placeholder="Enter Email Description"
-              value={eventData.emailDescription}
-              onChange={(e) => setEventData({ ...eventData, emailDescription: e.target.value })}
+          <Grid item xs={12}>
+            <ReactQuill
+              theme="snow"
+              value={emailDescription}
+              onChange={setEmailDescription}
+              placeholder="Write your Email Description here..."
             />
+
           </Grid>
           <Grid item xs={6}>
             <TextField
