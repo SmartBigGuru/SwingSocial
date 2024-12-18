@@ -20,7 +20,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-
 // Fetch events (all or single)
 export async function GET(req: Request) {
   try {

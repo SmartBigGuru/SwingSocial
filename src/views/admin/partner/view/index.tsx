@@ -344,7 +344,6 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   };
 
   const rsvpColumns = [
-    { field: "ProfileId", headerName: "ProfileId", flex: 1 },
     { field: "Username", headerName: "Name", flex: 1 },
     { field: "Email", headerName: "Email", flex: 1 },
     {
