@@ -327,9 +327,6 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     </CardContent>
   </div>
 </Dialog>
-
-
-
     </>
   )
 })

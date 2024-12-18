@@ -49,9 +49,7 @@ export async function GET(req: Request) {
       console.log('User fetched:', result.rows[0]);
       return NextResponse.json({ user: result.rows[0] });
     }
-    if(page == 0){
-      page = 1;
-    }
+    page = page+1;
 
     // Validate pagination parameters
     if (page < 1 || size < 1) {

@@ -77,9 +77,7 @@ export async function GET(req: Request) {
     }
 
     // Validate pagination params
-    if (sPage == 0) {
-      sPage = 1;
-    }
+    sPage = sPage+1;
     if (sPage < 1 || sSize < 1) {
       return NextResponse.json(
         { error: 'Invalid pagination parameters. Page and size must be greater than 0.' },
