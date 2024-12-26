@@ -15,6 +15,8 @@ interface RefreshProps {
   promocodeDetail?: any; // Add this line
 }
 
+var active = 0;
+
 const label = { inputProps: { 'aria-label': 'Checkbox demo' } };
 
 const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((props, ref) => {
@@ -23,7 +25,6 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
   const [adding, setAdding] = useState(false);
   const [emptyError, setEmptyError] = useState(false);
   const [checked, setChecked] = useState(false);
-  var active = 0;
 
   const handleCheckboxChange = (event: any) => {
     // Update the active state based on the checkbox's checked state    
@@ -131,7 +132,7 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
         displayMessage: promocodeDetail.DisplayMessage || "",
         freeDays: promocodeDetail.FreeDays || "",
         expireDate: promocodeDetail?.ExpireDate && promocodeDetail.ExpireDate || "",
-        active: 0
+        active: active
       });
     }
   }, [promocodeDetail]);
