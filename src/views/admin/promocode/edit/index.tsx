@@ -94,7 +94,7 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
       // Handle response
       if (response.ok) {
         const responseData = await response.json();
-        toast.success('Promo code added successfully!', {
+        toast.success('Promo code is saved successfully!', {
           autoClose: 5000,
           type: 'success',
         });
