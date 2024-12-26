@@ -1,8 +1,9 @@
 'use client'
 
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { Autocomplete, Button, CircularProgress, Dialog, DialogActions, DialogContent, Divider, FormControl, FormControlLabel, Grid, TextField } from "@mui/material"
+import { act, forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { Checkbox, Button, CircularProgress, Dialog, DialogActions, DialogContent, Divider, FormControl, FormControlLabel, Grid, TextField } from "@mui/material"
 import { toast } from "react-toastify";
+import { check } from "valibot";
 // MUI Imports
 export interface EditPromocodeHandle {
   open: () => void;
@@ -14,11 +15,28 @@ interface RefreshProps {
   promocodeDetail?: any; // Add this line
 }
 
+const label = { inputProps: { 'aria-label': 'Checkbox demo' } };
+
 const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((props, ref) => {
   const { refresh, id, promocodeDetail } = props;
   const [openDialog, setOpenDialog] = useState(false);
   const [adding, setAdding] = useState(false);
   const [emptyError, setEmptyError] = useState(false);
+  const [checked, setChecked] = useState(false);
+  var active = 0;
+
+  const handleCheckboxChange = (event: any) => {
+    // Update the active state based on the checkbox's checked state    
+    console.log(event.target.checked)
+    setChecked(event.target.checked)
+    if (event.target.checked === true) {
+      active = 1;
+    }
+    else {
+      active = 0;
+    }
+    console.log(active)
+  };
 
   const [promoCodeData, setPromoCodeData] = useState({
     id: promocodeDetail?.Id || "",
@@ -27,7 +45,7 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
     displayMessage: promocodeDetail?.DisplayMessage || "",
     freeDays: promocodeDetail?.FreeDays || "",
     expireDate: promocodeDetail?.ExpireDate && promocodeDetail?.ExpireDate || "",
-    active: true
+    active: 0
   });
 
   const updatePromoCode = async () => {
@@ -53,6 +71,8 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
       return;
     }
 
+    console.log("*************");
+    console.log(active);
     try {
       // Call the API with promo code data
       const response = await fetch('/api/admin/promocode/update', {
@@ -67,7 +87,7 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
           displayMessage,
           freeDays,
           expireDate,
-          active: 1
+          active: active
         }),
       });
 
@@ -111,7 +131,7 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
         displayMessage: promocodeDetail.DisplayMessage || "",
         freeDays: promocodeDetail.FreeDays || "",
         expireDate: promocodeDetail?.ExpireDate && promocodeDetail.ExpireDate || "",
-        active: true
+        active: 0
       });
     }
   }, [promocodeDetail]);
@@ -180,6 +200,11 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
               value={promoCodeData.expireDate}
               onChange={e => setPromoCodeData({ ...promoCodeData, expireDate: e.target.value })}
             />
+          </Grid>
+          <Grid item xs={12}>
+            <Checkbox {...label} defaultChecked={false} // Set default checked state based on `active`
+              checked={checked} // Ensure the checkbox reflects the state
+              onChange={handleCheckboxChange} /> Is Active?
           </Grid>
         </Grid>
 
