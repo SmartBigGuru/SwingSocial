@@ -147,7 +147,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       // Confirm before deleting
       const result = await Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to delete the user with ID ${userId}?`,
+        text: `Do you want to delete ${userId}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it!',
@@ -170,7 +170,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         console.log(responseData);
 
         // Show success alert
-        Swal.fire('Deleted!', `User with ID ${userId} has been deleted.`, 'success');
+        Swal.fire('Deleted!', `${userId} has been deleted.`, 'success');
 
         // Optionally, refetch data to update the UI
       } else {
@@ -191,7 +191,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       // Confirm before upgrading
       const result = await Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to upgrade the user with ID ${userId}?`,
+        text: `Do you want to upgrade ${userId}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, upgrade it!',
@@ -219,7 +219,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         console.log(responseData);
 
         // Show success alert
-        await Swal.fire('Upgraded!', `User with ID ${userId} has been upgraded successfully.`, 'success');
+        await Swal.fire('Upgraded!', `${userId} has been upgraded successfully.`, 'success');
         fetchData()
         // Optionally, refetch data to update the UI
         // Example: fetchUsers(); // Call a function to refresh the user list
@@ -240,7 +240,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       // Confirm before upgrading
       const result = await Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to downgrade the user with ID ${userId}?`,
+        text: `Do you want to downgrade ${userId}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, downgrade it!',
@@ -261,14 +261,14 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
         if (!response.ok) {
           const errorResponse = await response.json();
-          throw new Error(errorResponse.error || `Failed to downgrade user with ID ${userId}`);
+          throw new Error(errorResponse.error || `Failed to downgrade ${userId}`);
         }
 
         const responseData = await response.json();
         console.log(responseData);
 
         // Show success alert
-        await Swal.fire('Downgraded!', `User with ID ${userId} has been downgraded successfully.`, 'success');
+        await Swal.fire('Downgraded!', `${userId} has been downgraded successfully.`, 'success');
         fetchData();
         // Optionally, refetch data to update the UI
         // Example: fetchUsers(); // Call a function to refresh the user list
@@ -441,21 +441,21 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
               {
                 text: 'Delete',
                 menuItemProps: {
-                  onClick: () => deleteUser(row?.original?.Id), // Use a function to call deleteUser
+                  onClick: () => deleteUser(row?.original?.Username), // Use a function to call deleteUser
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'Upgrade',
                 menuItemProps: {
-                  onClick: () => upgradeUser(row?.original?.Id),
+                  onClick: () => upgradeUser(row?.original?.Username),
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'Downgrade',
                 menuItemProps: {
-                  onClick: () => downgradeUser(row?.original?.Id),
+                  onClick: () => downgradeUser(row?.original?.Username),
                   className: 'flex items-center gap-2'
                 }
               },
