@@ -12,4 +12,5 @@ const StyledContentWrapper = styled.div`
   }
 `
 
+
 export default StyledContentWrapper
