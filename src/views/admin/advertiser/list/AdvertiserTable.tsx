@@ -441,21 +441,21 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
               {
                 text: 'Delete',
                 menuItemProps: {
-                  onClick: () => deleteUser(row?.original?.Username), // Use a function to call deleteUser
+                  onClick: () => deleteUser(row?.original?.Id), // Use a function to call deleteUser
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'Upgrade',
                 menuItemProps: {
-                  onClick: () => upgradeUser(row?.original?.Username),
+                  onClick: () => upgradeUser(row?.original?.Id),
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'Downgrade',
                 menuItemProps: {
-                  onClick: () => downgradeUser(row?.original?.Username),
+                  onClick: () => downgradeUser(row?.original?.Id),
                   className: 'flex items-center gap-2'
                 }
               },
