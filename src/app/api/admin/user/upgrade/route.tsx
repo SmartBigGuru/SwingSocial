@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const upgradeQuery = `SELECT * FROM admin_upgrade_to_paid($1)`;
     const result = await pool.query(upgradeQuery, [profileId]);
 
-    if (result.rowCount === 0) {
+    if (result?.rowCount === 0) {
       return NextResponse.json(
         { error: `No user found with Profile ID ${profileId}` },
         { status: 404 }

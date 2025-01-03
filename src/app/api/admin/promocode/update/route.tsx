@@ -19,7 +19,7 @@ export async function POST(req: any) {
     try {
         // Call the stored procedure with the promoCodeData fields
         const result = await pool.query(
-            'SELECT * FROM admin_promocode_update($1, $2, $3, $4, $5,$6,$7)',
+            'SELECT * FROM admin_promocode_update($1,$2,$3,$4,$5,$6,$7)',
             [id,promoCodeText, description, displayMessage, freeDays, expireDate,active]
         );
 
