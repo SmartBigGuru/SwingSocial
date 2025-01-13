@@ -111,6 +111,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
       >
         Deleted Profiles
       </MenuItem>
+      <MenuItem href={(`/admin/qa/email-template`)}
+        icon={<i className='ri-calendar-event-line' />}
+        exactMatch={false}
+        activeUrl='/admin/qa/email-template'
+      >
+        Email Templates
+      </MenuItem>
     </>
   )
 
@@ -158,6 +165,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         activeUrl='/admin/sp/invoice'
       >
         Deleted Profiles
+      </MenuItem>
+      <MenuItem href={(`/admin/sp/email-template`)}
+        icon={<i className='ri-calendar-event-line' />}
+        exactMatch={false}
+        activeUrl='/admin/sp/email-template'
+      >
+        Email Templates
       </MenuItem>
       {/*<MenuItem href={(`/admin/sp/contract`)}
         icon={<i className='ri-shake-hands-line' />}
@@ -234,6 +248,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         activeUrl='/admin/um/promocode-manage'
       >
         Promocode Manager
+      </MenuItem>
+      <MenuItem href={(`/admin/um/email-template`)}
+        icon={<i className='ri-calendar-event-line' />}
+        exactMatch={false}
+        activeUrl='/admin/um/email-template'
+      >
+        Email Templates
       </MenuItem>
     </>
   )
