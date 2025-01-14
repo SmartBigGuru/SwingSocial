@@ -75,38 +75,87 @@ export async function GET(req: Request) {
   }
 }
 
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const {
+      alias,
+      subject,
+      templateName,
+      qbody,
+      qsjsonbody,
+      qactive,
+      qtype,
+      qtemplateid,
+      qassociatedserverid,
+    } = body;
 
+    // Validate required fields
+    if (!alias || !subject || !templateName || !qbody || !qtemplateid) {
+      return NextResponse.json(
+        { error: 'Missing required fields. Please provide alias, subject, templateName, qbody, qtype, and qtemplateid.' },
+        { status: 400 }
+      );
+    }
+
+    // Execute the insert query
+    const query = `SELECT * FROM public.admin_emailtemplate_insert($1,$2,$3,$4,$5,$6,$7,$8,$9)`;
+    const values = [
+      alias,
+      subject,
+      templateName,
+      qbody,
+      qsjsonbody || null,
+      1,
+      1,
+      qtemplateid,
+      qassociatedserverid || null,
+    ];
+
+    const result = await pool.query(query, values);
+
+    return NextResponse.json(
+      { message: 'Template inserted successfully.', data: result.rows },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Insert operation failed:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
 
 export async function DELETE(req: Request) {
   try {
     // Parse URL parameters
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('id'); // User ID to delete
-    console.log(userId);
+    const body = await req.json();
+    const {
+     id
+    } = body;
+    console.log(id);
 
-    if (!userId) {
+    if (!id) {
       return NextResponse.json(
         { error: 'User ID is required for deletion.' },
         { status: 400 }
       );
     }
 
-    console.log(`Deleting user with ID: ${userId}`);
+    console.log(`Deleting user with ID: ${id}`);
 
     // Call the admin_delete_profile function to delete the user
-    const deleteQuery = `SELECT * FROM public.admin_delete_profile($1)`;
-    const result = await pool.query(deleteQuery, [userId]);
+    const deleteQuery = `SELECT * FROM public.admin_emailtemplate_delete($1)`;
+    const result = await pool.query(deleteQuery, [id]);
 
     if (result.rowCount === 0) {
       return NextResponse.json(
-        { error: `No user found with ID ${userId}` },
+        { error: `No user found with ID ${id}` },
         { status: 404 }
       );
     }
 
-    console.log(`User with ID ${userId} deleted successfully.`);
+    console.log(`User with ID ${id} deleted successfully.`);
     return NextResponse.json(
-      { message: `User with ID ${userId} deleted successfully.` },
+      { message: `User with ID ${id} deleted successfully.` },
       { status: 200 }
     );
   } catch (error) {

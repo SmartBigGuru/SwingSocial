@@ -19,6 +19,7 @@ import OptionMenu from '@/@core/components/option-menu'
 import DetailView, { DetailViewHandle } from '../view'
 import EditPromocodeDialogue from '../edit'
 import type { EditPromocodeHandle } from '../edit';
+import Swal from 'sweetalert2'
 
 declare module '@tanstack/table-core' {
   interface FilterFns {
@@ -93,7 +94,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const [status, setStatus] = useState(searchParams.get('status') ?? '')
   const [company, setCompany] = useState(searchParams.get('company') ?? '')
-  const [promocodeDetail, setPromocodeDetail] = useState<any>('')
+  const [templateDetail, setTemplateDetail] = useState<any>('')
 
   const [userProfiles, setUserProfiles] = useState([]); // User profiles state
   const [selectedProfile, setSelectedProfile] = useState(''); // Selected user profile
@@ -203,87 +204,52 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  const DeactiveAction = async (userId: string) => {
-
-    console.log(userId);
+  const handleDeleteTemplate = async (id: any) => {
     try {
+      console.log(id, "====id");
 
-      const response = await fetch('/api/admin/promocode/deactive', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: userId
+      // Confirm before deleting
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to delete ${id}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+      });
+
+      // If user confirms deletion
+      if (result.isConfirmed) {
+        const response = await fetch('/api/admin/emailtemplate', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: id
+          })
         })
-      })
 
-      console.log(response)
 
-      if (response.ok) {
+        if (!response.ok) {
+          throw new Error(`Failed to delete Template with ID ${id}`);
+        }
+
         const responseData = await response.json();
-        toast.success('Promo deactivated successfully!', {
-          autoClose: 5000,
-          type: 'success',
-        });
+        console.log(responseData);
 
-        console.log('Response:', responseData);
+        // Show success alert
+        Swal.fire('Deleted!', `${id} has been deleted.`, 'success');
+        fetchData();
+
+        // Optionally, refetch data to update the UI
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to deactive promo code!', {
-          autoClose: 5000,
-          type: 'error',
-        });
-        console.error('Error Response:', errorData);
+        console.log('Template deletion cancelled.');
       }
-
     } catch (error: any) {
-      toast.error(`${error.message}`, {
-        autoClose: 3000,
-        type: 'error'
-      })
-    }
-  }
-
-  const ActiveAction = async (userId: string) => {
-
-    console.log(userId);
-    try {
-
-      const response = await fetch('/api/admin/promocode/active', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: userId
-        })
-      })
-
-      console.log(response)
-
-      if (response.ok) {
-        const responseData = await response.json();
-        toast.success('Promo activated successfully!', {
-          autoClose: 5000,
-          type: 'success',
-        });
-
-        console.log('Response:', responseData);
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to deactive promo code!', {
-          autoClose: 5000,
-          type: 'error',
-        });
-        console.error('Error Response:', errorData);
-      }
-
-    } catch (error: any) {
-      toast.error(`${error.message}`, {
-        autoClose: 3000,
-        type: 'error'
-      })
+      console.error('Error deleting user:', error.message);
+      // Show error alert
+      Swal.fire('Error!', 'An error occurred while deleting the user.', 'error');
     }
   }
 
@@ -327,7 +293,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                 {
                   text: 'Edit',
                   menuItemProps: {
-                    onClick: () => { setPromocodeDetail(row.original); editPromocodeRef.current?.open() },
+                    onClick: () => { setTemplateDetail(row.original); editPromocodeRef.current?.open() },
                     className: 'flex items-center gap-2'
                   }
                 },
@@ -343,7 +309,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   text: 'Send Email',
                   menuItemProps: {
                     onClick: () => {
-                      console.log("object");
+                      console.log("test");
                     },
                     className: 'flex items-center gap-2'
                   }
@@ -352,7 +318,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   text: 'Delete',
                   menuItemProps: {
                     onClick: () => {
-                      console.log("object");
+                      handleDeleteTemplate(row.original?.Id);
                     },
                     className: 'flex items-center gap-2'
                   }
@@ -514,9 +480,9 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
       <DetailView ref={detailRef} refresh={fetchData} />
       <EditPromocodeDialogue
         ref={editPromocodeRef}
-        promocodeDetail={promocodeDetail}
+        templateDetail={templateDetail}
         refresh={fetchData}
-        id={promocodeDetail?.Id}
+        id={templateDetail?.Id}
       />
 
     </>

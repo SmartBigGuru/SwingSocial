@@ -1,7 +1,15 @@
 'use client';
 
-import { forwardRef, useImperativeHandle, useState, useRef } from "react";
-import { Dialog, DialogActions, DialogContent, DialogTitle, Button, Grid } from "@mui/material";
+import { forwardRef, useImperativeHandle, useState, useRef, useEffect } from "react";
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Button,
+  Grid,
+  TextField,
+} from "@mui/material";
 import EmailEditor, { EditorRef, EmailEditorProps } from "react-email-editor";
 import { toast } from "react-toastify";
 
@@ -12,19 +20,39 @@ export interface EditPromocodeHandle {
 
 interface RefreshProps {
   refresh: () => void;
-  id: any;
-  promocodeDetail?: {
-    JsonBody?: any; // JSON body of the template design
+  id: string; // emailtemplateid
+  templateDetail?: {
+    Name?: string; // Template Name
+    Subject?: string; // Template Subject
+    JsonBody?: string; // JSON body of the template design
+    Alias?: string; // Template alias
+    AssociatedServerId:any;
+    TemplateId:any
   };
 }
 
 const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((props, ref) => {
-  const { refresh, id, promocodeDetail } = props;
+  const { refresh, id, templateDetail } = props;
   const [openDialog, setOpenDialog] = useState(false);
+  const [name, setName] = useState(templateDetail?.Name || ""); // Name field
+  const [templateId, setTemplate] = useState(templateDetail?.TemplateId || ""); // TemplateId field
+  const [associatedServerId, setAssociatedServerId] = useState(templateDetail?.AssociatedServerId || ""); // TemplateId field
+  const [subject, setSubject] = useState(templateDetail?.Subject || ""); // Subject field
+  const [alias, setAlias] = useState(templateDetail?.Alias || ""); // Alias field
   const emailEditorRef = useRef<EditorRef>(null);
+
+  useEffect(() => {
+    setName(templateDetail?.Name || "");
+    setSubject(templateDetail?.Subject || "");
+    setAlias(templateDetail?.Alias || "");
+    setTemplate(templateDetail?.TemplateId || "");
+    setAssociatedServerId(templateDetail?.AssociatedServerId || "");
+  }, [templateDetail]);
 
   useImperativeHandle(ref, () => ({
     open: () => {
+      console.log(templateDetail,"===============templateDetail");
+
       setOpenDialog(true);
     },
     close: () => {
@@ -32,7 +60,42 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
     },
   }));
 
-  // Export HTML and log the result
+  const updateTemplate = async (design: any) => {
+    try {
+      const response = await fetch("/api/admin/emailtemplate/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: id,
+          alias,
+          subject,
+          templateName: name,
+          qbody: JSON.stringify(design), // Save design as JSON string
+          qsjsonbody: JSON.stringify(design),
+          qactive: true, // Default to true
+          qtype: 1, // Default type
+          qtemplateid: templateId, // Example template ID
+          qassociatedserverid: associatedServerId, // Optional
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update the template.");
+      }
+
+      const data = await response.json();
+      toast.success("Template updated successfully!");
+      setOpenDialog(false);
+      refresh(); // Refresh the parent component or data
+    } catch (error: any) {
+      console.error("Error updating template:", error);
+      toast.error(error.message || "Something went wrong!");
+    }
+  };
+
   const exportHtml = () => {
     const unlayer = emailEditorRef.current?.editor;
 
@@ -42,23 +105,20 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
     }
 
     unlayer.exportHtml((data) => {
-      const { design, html } = data;
-      console.log("Exported HTML:", html);
-      console.log("Exported Design JSON:", design);
-      toast.success("Email template exported successfully!");
+      const { design } = data; // Exported design
+      if (!design) {
+        toast.error("Failed to export design!");
+        return;
+      }
 
-      // Optionally, send `html` and `design` to your server
-      // saveTemplate({ id, html, design });
+      updateTemplate(design); // Call API to update template
     });
   };
 
-  // Load template JSON into the editor when it's ready
   const onReady: EmailEditorProps["onReady"] = (unlayer) => {
-    console.log("Editor is ready!");
-
-    if (promocodeDetail?.JsonBody) {
+    if (templateDetail?.JsonBody) {
       try {
-        const design = JSON.parse(promocodeDetail.JsonBody); // Parse JSON safely
+        const design = JSON.parse(templateDetail.JsonBody); // Parse JSON safely
         unlayer.loadDesign(design);
       } catch (error) {
         console.error("Invalid JSON body:", error);
@@ -67,7 +127,6 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
     }
   };
 
-  // Close the dialog
   const handleClose = () => {
     setOpenDialog(false);
   };
@@ -82,8 +141,38 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
       <DialogTitle id="email-editor-dialog-title">Edit Email Template</DialogTitle>
       <DialogContent>
         <Grid container spacing={5}>
+          {/* Template Alias Field */}
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="Template Alias"
+              variant="outlined"
+              fullWidth
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+            />
+          </Grid>
+          {/* Template Name Field */}
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="Template Name"
+              variant="outlined"
+              fullWidth
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Grid>
+          {/* Template Subject Field */}
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="Template Subject"
+              variant="outlined"
+              fullWidth
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+          </Grid>
+          {/* Email Editor */}
           <Grid item xs={12}>
-            {/* Email Editor */}
             <EmailEditor
               ref={emailEditorRef}
               onReady={onReady}
@@ -94,7 +183,7 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
       </DialogContent>
       <DialogActions>
         <Button onClick={exportHtml} variant="contained" color="primary">
-          Export Template
+          Update
         </Button>
         <Button onClick={handleClose} variant="outlined" color="secondary">
           Close
