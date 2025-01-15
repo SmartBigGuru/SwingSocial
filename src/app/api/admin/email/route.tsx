@@ -31,6 +31,8 @@ export async function POST(req: any) {
     // Retrieve email list based on target segment
     const recipients = await getEmailList(targetSegment); // Implement this function
 
+
+
     if (recipients.length === 0) {
       return NextResponse.json({ message: 'No recipients found for the selected segment.' }, { status: 400 });
     }
