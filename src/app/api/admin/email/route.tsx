@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ServerClient } from 'postmark';
 
+
 export async function POST(req: any) {
   try {
     const { targetSegment, templateId, templateName } = await req.json();
