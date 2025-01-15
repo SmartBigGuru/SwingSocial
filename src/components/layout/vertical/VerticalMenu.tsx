@@ -153,7 +153,7 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         Event Manager
       </MenuItem>
       <MenuItem href={(`/admin/sp/promocode-manage`)}
-        icon={<i className='ri-calendar-event-line' />}
+        icon={<i className='ri-coupon-3-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/promocode-manage'
       >
@@ -167,7 +167,7 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         Deleted Profiles
       </MenuItem>
       <MenuItem href={(`/admin/sp/email-template`)}
-        icon={<i className='ri-calendar-event-line' />}
+        icon={<i className='ri-mail-line' />}
         exactMatch={false}
         activeUrl='/admin/sp/email-template'
       >

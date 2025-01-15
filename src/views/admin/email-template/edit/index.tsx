@@ -9,6 +9,9 @@ import {
   Button,
   Grid,
   TextField,
+  FormControl,
+  FormLabel,
+  OutlinedInput,
 } from "@mui/material";
 import EmailEditor, { EditorRef, EmailEditorProps } from "react-email-editor";
 import { toast } from "react-toastify";
@@ -142,35 +145,38 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
       <DialogContent>
         <Grid container spacing={5}>
           {/* Template Alias Field */}
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Template Alias"
-              variant="outlined"
-              fullWidth
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
-            />
-          </Grid>
-          {/* Template Name Field */}
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Template Name"
-              variant="outlined"
-              fullWidth
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Grid>
-          {/* Template Subject Field */}
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Template Subject"
-              variant="outlined"
-              fullWidth
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
-          </Grid>
+          {/* Template Alias */}
+      <Grid item xs={12} sm={4}>
+        <FormControl fullWidth variant="outlined">
+          <FormLabel style={{ paddingTop: '5px' }}>Template Alias</FormLabel>
+          <OutlinedInput
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+          />
+        </FormControl>
+      </Grid>
+
+      {/* Template Name */}
+      <Grid item xs={12} sm={4}>
+        <FormControl fullWidth variant="outlined">
+          <FormLabel style={{ paddingTop: '5px' }}>Template Name</FormLabel>
+          <OutlinedInput
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </FormControl>
+      </Grid>
+
+      {/* Template Subject */}
+      <Grid item xs={12} sm={4}>
+        <FormControl fullWidth variant="outlined">
+          <FormLabel style={{ paddingTop: '5px' }}>Template Subject</FormLabel>
+          <OutlinedInput
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+          />
+        </FormControl>
+      </Grid>
           {/* Email Editor */}
           <Grid item xs={12}>
             <EmailEditor

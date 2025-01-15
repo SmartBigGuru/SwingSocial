@@ -20,6 +20,8 @@ import DetailView, { DetailViewHandle } from '../view'
 import EditPromocodeDialogue from '../edit'
 import type { EditPromocodeHandle } from '../edit';
 import Swal from 'sweetalert2'
+import SendBlastEmailModal, { SendBlastEmailHandle } from '../email/SendBlastEmailModal'
+import SendTestEmailModal, { SendTestEmailHandle } from '../email/SendTestEmailModal'
 
 declare module '@tanstack/table-core' {
   interface FilterFns {
@@ -62,7 +64,7 @@ type TableAction = PartnerType & {
   Venue: string;
   Category: string;
   PromoCodeText: string;
-  Active:any;
+  Active: any;
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -101,6 +103,8 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const router = useRouter()
   const detailRef = useRef<DetailViewHandle>(null)
   const editPromocodeRef = useRef<EditPromocodeHandle>(null)
+  const sendEmailRef = useRef<SendBlastEmailHandle>(null)
+  const sendTestEmailRef = useRef<SendTestEmailHandle>(null)
 
 
   useImperativeHandle(ref, () => ({
@@ -301,16 +305,14 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   text: 'Send Test Email',
                   menuItemProps: {
                     onClick: () => {
-                      console.log("object");
+                      setTemplateDetail(row.original); sendTestEmailRef.current?.open()
                     },
                     className: 'flex items-center gap-2'
                   }
                 }, {
                   text: 'Send Email',
                   menuItemProps: {
-                    onClick: () => {
-                      console.log("test");
-                    },
+                    onClick: () => { setTemplateDetail(row.original); sendEmailRef.current?.open() },
                     className: 'flex items-center gap-2'
                   }
                 },
@@ -484,6 +486,17 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
         refresh={fetchData}
         id={templateDetail?.Id}
       />
+      <SendBlastEmailModal
+        id={templateDetail?.Id}
+        ref={sendEmailRef}
+        templateDetail={templateDetail}
+        refresh={fetchData} />
+
+      <SendTestEmailModal
+        id={templateDetail?.Id}
+        ref={sendTestEmailRef}
+        templateDetail={templateDetail}
+        refresh={fetchData} />
 
     </>
   )

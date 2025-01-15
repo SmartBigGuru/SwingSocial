@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, useEffect, useImperativeHandle, useState, useRef } from "react";
-import { Dialog, DialogActions, DialogContent, DialogTitle, Button, Grid, TextField } from "@mui/material";
+import { Dialog, DialogActions, DialogContent, DialogTitle, Button, Grid, TextField, FormControl, FormLabel, OutlinedInput } from "@mui/material";
 import EmailEditor, { EditorRef, EmailEditorProps } from "react-email-editor";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -94,27 +94,27 @@ const AddNewAdvertiserDialog = forwardRef<AddNewPartnerHandle, RefreshProps>((pr
       <DialogContent>
         <Grid container spacing={5}>
           {/* Template Name */}
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Template Name"
-              variant="outlined"
-              fullWidth
-              required
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-            />
-          </Grid>
-          {/* Subject */}
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Subject"
-              variant="outlined"
-              fullWidth
-              required
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
-          </Grid>
+          {/* Template Name */}
+      <Grid item xs={12} sm={6}>
+        <FormControl fullWidth required variant="outlined">
+          <FormLabel style={{ paddingTop: '5px' }}>Template Name</FormLabel>
+          <OutlinedInput
+            value={templateName}
+            onChange={(e) => setTemplateName(e.target.value)}
+          />
+        </FormControl>
+      </Grid>
+
+      {/* Subject */}
+      <Grid item xs={12} sm={6}>
+        <FormControl fullWidth required variant="outlined">
+          <FormLabel style={{ paddingTop: '5px' }}>Subject</FormLabel>
+          <OutlinedInput
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+          />
+        </FormControl>
+      </Grid>
           {/* Email Editor */}
           <Grid item xs={12}>
             <EmailEditor
