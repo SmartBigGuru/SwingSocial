@@ -42,19 +42,51 @@ export async function POST(req: any) {
   }
 }
 
-// Mock function to fetch email list based on the target segment
 async function getEmailList(targetSegment: string): Promise<{ email: string; name: string }[]> {
-  // Replace this logic with a real database query
-  const mockData:any = {
-    All: [
-      { email: 'faisalayazsolangi@gmail.com', name: 'Faisal' },
-      { email: 'smartbigguru@gmail.com', name: 'Antonio' },
-    ],
-    'Paid Members': [{ email: 'paiduser@example.com', name: 'Paid User' }],
-    'Free Members': [{ email: 'freeuser@example.com', name: 'Free User' }],
-    'Legacy Members': [{ email: 'legacyuser@example.com', name: 'Legacy User' }],
-    'New Platform Members': [{ email: 'newuser@example.com', name: 'New User' }],
-  };
+  try {
+    // Fetch all users from the database
+    const query = `SELECT * FROM public.admin_getalldata()`;
+    const { rows: users } = await pool.query(query);
 
-  return mockData[targetSegment] || [];
+    // Filter users based on the target segment
+    let filteredUsers: { email: string; name: string }[] = [];
+
+    switch (targetSegment) {
+      case 'All':
+        filteredUsers = users.map((user: any) => ({
+          email: user.Email,
+          name: user.Username,
+        }));
+        break;
+      case 'Paid Members':
+        filteredUsers = users
+          .filter((user: any) => parseFloat(user.Price) > 0)
+          .map((user: any) => ({
+            email: user.Email,
+            name: user.Username,
+          }));
+        break;
+      case 'Free Members':
+        filteredUsers = users
+          .filter((user: any) => parseFloat(user.Price) === 0)
+          .map((user: any) => ({
+            email: user.Email,
+            name: user.Username,
+          }));
+        break;
+      case 'Legacy Members':
+        // Add filtering logic if Legacy Members have specific criteria
+        break;
+      case 'New Platform Members':
+        // Add filtering logic if New Platform Members have specific criteria
+        break;
+      default:
+        throw new Error(`Invalid target segment: ${targetSegment}`);
+    }
+
+    return filteredUsers;
+  } catch (error) {
+    console.error('Error fetching email list:', error);
+    throw new Error('Unable to retrieve email list');
+  }
 }
