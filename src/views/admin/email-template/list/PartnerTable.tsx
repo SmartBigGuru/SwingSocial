@@ -208,14 +208,14 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  const handleDeleteTemplate = async (id: any) => {
+  const handleDeleteTemplate = async (id: any,name:any) => {
     try {
       console.log(id, "====id");
 
       // Confirm before deleting
       const result = await Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to delete ${id}?`,
+        text: `Do you want to delete ${name}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it!',
@@ -236,14 +236,14 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
 
         if (!response.ok) {
-          throw new Error(`Failed to delete Template with ID ${id}`);
+          throw new Error(`Failed to delete Template with Name ${name}`);
         }
 
         const responseData = await response.json();
         console.log(responseData);
 
         // Show success alert
-        Swal.fire('Deleted!', `${id} has been deleted.`, 'success');
+        Swal.fire('Deleted!', `${name} has been deleted.`, 'success');
         fetchData();
 
         // Optionally, refetch data to update the UI
@@ -320,7 +320,7 @@ const PartnerTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   text: 'Delete',
                   menuItemProps: {
                     onClick: () => {
-                      handleDeleteTemplate(row.original?.Id);
+                      handleDeleteTemplate(row.original?.Id,row.original?.Name);
                     },
                     className: 'flex items-center gap-2'
                   }
