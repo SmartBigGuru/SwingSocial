@@ -140,14 +140,14 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
     router.push(`/admin/sp/advertiser-manage/${queryString ? `?${queryString}` : ''}`)
   }
-  async function deleteUser(userId: string) {
+  async function deleteUser(userId: string, userName: string) {
     try {
       console.log(userId, "====userId");
 
       // Confirm before deleting
       const result = await Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to delete ${userId}?`,
+        text: `Do you want to delete ${userName}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it!',
@@ -184,14 +184,14 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   }
 
 
-  async function upgradeUser(userId: string) {
+  async function upgradeUser(userId: string, userName: string) {
     try {
       console.log(userId, "====userId");
 
       // Confirm before upgrading
       const result = await Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to upgrade ${userId}?`,
+        text: `Do you want to upgrade ${userName}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, upgrade it!',
@@ -233,14 +233,14 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
     }
   }
 
-  async function downgradeUser(userId: string) {
+  async function downgradeUser(userId: string, userName: string) {
     try {
       console.log(userId, "====userId");
 
       // Confirm before upgrading
       const result = await Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to downgrade ${userId}?`,
+        text: `Do you want to downgrade ${userName}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, downgrade it!',
@@ -441,21 +441,21 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
               {
                 text: 'Delete',
                 menuItemProps: {
-                  onClick: () => deleteUser(row?.original?.Id), // Use a function to call deleteUser
+                  onClick: () => deleteUser(row?.original?.Id, row?.original?.Username), // Use a function to call deleteUser
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'Upgrade',
                 menuItemProps: {
-                  onClick: () => upgradeUser(row?.original?.Id),
+                  onClick: () => { upgradeUser(row?.original?.Id, row?.original?.Username) },
                   className: 'flex items-center gap-2'
                 }
               },
               {
                 text: 'Downgrade',
                 menuItemProps: {
-                  onClick: () => downgradeUser(row?.original?.Id),
+                  onClick: () => downgradeUser(row?.original?.Id, row?.original?.Username),
                   className: 'flex items-center gap-2'
                 }
               },
