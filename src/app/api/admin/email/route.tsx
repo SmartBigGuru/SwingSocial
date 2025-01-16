@@ -24,7 +24,7 @@ const pool = new Pool({
 
 export async function POST(req: any) {
   try {
-    const { targetSegment, templateId, templateName } = await req.json();
+    const { targetSegment, htmlBody, subject } = await req.json();
 
     const client = new ServerClient('dcd2cc9f-7ac2-4753-bf70-46cb9df05178');
 
@@ -37,21 +37,18 @@ export async function POST(req: any) {
       return NextResponse.json({ message: 'No recipients found for the selected segment.' }, { status: 400 });
     }
 
+    // Prepare email objects for each recipient
+    const emailBatch = recipients.map((recipient) => ({
+      From: 'info@swingsocial.co',
+      To: recipient.email, // Assuming each recipient has an `email` property
+      Subject: subject,
+      TextBody: "",
+      HtmlBody: htmlBody,
+      MessageStream: "outbound",
+    }));
+
     // Send emails in bulk
-    const emailPromises = recipients.map((recipient) =>
-      client.sendEmailWithTemplate({
-        From: 'info@swingsocial.co',
-        To: recipient.email,
-        TemplateId: templateId,
-        TemplateModel: {
-          name: recipient.name,
-          templateName,
-        },
-      })
-    );
-
-    await Promise.all(emailPromises);
-
+    await client.sendEmailBatch(emailBatch);
     return NextResponse.json({ message: 'Emails sent successfully!' });
   } catch (error: any) {
     console.error('Error sending bulk emails:', error);

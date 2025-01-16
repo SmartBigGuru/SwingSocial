@@ -6,19 +6,19 @@ import { NextResponse } from 'next/server';
 export async function POST(req: any) {
     try {
 
-        const { username, email,templateId ,templateName} = await req.json();
+        const { subject,htmlBody, email} = await req.json();
         const client = new ServerClient('dcd2cc9f-7ac2-4753-bf70-46cb9df05178')
 
-        const emailData = {
+        const emailData:any = {
             From: 'info@swingsocial.co',
             To: email,
-            TemplateId: templateId,
-            TemplateModel: {
-                "name": templateName, // Replace with dynamic data as needed
-            },
+            Subject:subject,
+            TextBody:"",
+            HtmlBody:htmlBody,
+            Messagestream:"outbound"
         };
 
-        await client.sendEmailWithTemplate(emailData)
+        await client.sendEmail(emailData)
         return NextResponse.json({
             message: 'Email is sent successfully',
         });

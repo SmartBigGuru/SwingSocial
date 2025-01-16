@@ -25,6 +25,7 @@ interface RefreshProps {
     Name?: string; // Template Name
     Subject?: string; // Template Subject
     JsonBody?: string; // JSON body of the template design
+    HtmlBody:any;
     Alias?: string; // Template alias
     AssociatedServerId: any;
     TemplateId: any;
@@ -54,8 +55,8 @@ const SendBlastEmailModal = forwardRef<SendBlastEmailHandle, RefreshProps>((prop
     try {
       const response = await axios.post('/api/admin/email', {
         targetSegment,
-        templateId: props.templateDetail?.TemplateId,
-        templateName: props.templateDetail?.Name,
+        subject: props.templateDetail?.Subject,
+        htmlBody: props.templateDetail?.HtmlBody,
       });
 
       console.log('Response:', response.data);
