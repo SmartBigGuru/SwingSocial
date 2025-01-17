@@ -99,6 +99,12 @@ async function getEmailList(targetSegment: string): Promise<{ email: string; nam
         break;
       case 'New Platform Members':
         // Add filtering logic if New Platform Members have specific criteria
+        filteredUsers = users
+        .filter((user: any) => user.Username === "Webnew")
+        .map((user: any) => ({
+          email: user.Email,
+          name: user.Username,
+        }));
         break;
       default:
         throw new Error(`Invalid target segment: ${targetSegment}`);
