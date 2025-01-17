@@ -23,6 +23,15 @@ const pool = new Pool({
   port: 5432,
 });
 
+
+
+function chunkArray(array:any, size:any) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
 export async function POST(req: any) {
   try {
     const { targetSegment, htmlBody, subject } = await req.json();
@@ -37,19 +46,28 @@ export async function POST(req: any) {
     if (recipients.length === 0) {
       return NextResponse.json({ message: 'No recipients found for the selected segment.' }, { status: 400 });
     }
+    // Split the recipients into chunks of 40
+    const recipientChunks = chunkArray(recipients, 40);
 
-    // Prepare email objects for each recipient
-    const emailBatch = recipients.map((recipient) => ({
-      From: 'info@swingsocial.co',
-      To: recipient.email, // Assuming each recipient has an `email` property
-      Subject: subject,
-      TextBody: "",
-      HtmlBody: htmlBody,
-      MessageStream: "outbound",
-    }));
+    for (const chunk of recipientChunks) {
+      // Prepare email objects for the current chunk
+      const emailBatch = chunk.map((recipient:any) => ({
+        From: 'info@swingsocial.co',
+        To: recipient.email, // Assuming each recipient has an `email` property
+        Subject: subject,
+        TextBody: "",
+        HtmlBody: htmlBody,
+        MessageStream: "outbound",
+      }));
 
-    // Send emails in bulk
-    await client.sendEmailBatch(emailBatch);
+      // Send the email batch
+      try {
+        await client.sendEmailBatch(emailBatch);
+        console.log(`Batch of ${emailBatch.length} emails sent successfully.`);
+      } catch (error) {
+        console.error("Error sending email batch:", error);
+      }
+    }
     return NextResponse.json({ message: 'Emails sent successfully!' });
   } catch (error: any) {
     console.error('Error sending bulk emails:', error);
@@ -101,11 +119,11 @@ async function getEmailList(targetSegment: string): Promise<{ email: string; nam
       case 'New Platform Members':
         // Add filtering logic if New Platform Members have specific criteria
         filteredUsers = users
-        .filter((user: any) => user.Username === "Webnew")
-        .map((user: any) => ({
-          email: user.Email,
-          name: user.Username,
-        }));
+          .filter((user: any) => user.Username === "Webnew")
+          .map((user: any) => ({
+            email: user.Email,
+            name: user.Username,
+          }));
         break;
       default:
         throw new Error(`Invalid target segment: ${targetSegment}`);
