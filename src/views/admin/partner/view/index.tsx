@@ -833,21 +833,28 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
               <TextField
                 margin="dense"
                 name="ticketName"
-                label="Event Name"
+                label="Ticket Name"
                 fullWidth
                 variant="outlined"
                 value={formData.ticketName}
                 onChange={handleChange}
               />
-              <TextField
-                margin="dense"
-                name="ticketType"
-                label="Ticket Type"
-                fullWidth
-                variant="outlined"
-                value={formData.ticketType}
-                onChange={handleChange}
-              />
+              <FormControl fullWidth margin="dense" variant="outlined">
+                <InputLabel id="ticket-type-label">Ticket Type</InputLabel>
+                <Select
+                  labelId="ticket-type-label"
+                  name="ticketType"
+                  value={formData.ticketType}
+                  onChange={handleChange}
+                  label="Ticket Type"
+                >
+                  <MenuItem value="Man">Man</MenuItem>
+                  <MenuItem value="Woman">Woman</MenuItem>
+                  <MenuItem value="Couple">Couple</MenuItem>
+                  <MenuItem value="Throuple">Throuple</MenuItem>
+                </Select>
+              </FormControl>
+
               <TextField
                 margin="dense"
                 name="price"
