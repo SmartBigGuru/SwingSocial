@@ -125,6 +125,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       setOpen(true)
       fetchData(id);
       setEventId(id)
+
       fetchUserProfiles(searchTerm, page);
     }
   }))
@@ -443,6 +444,56 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   useEffect(() => {
     fetchUserProfiles(searchTerm, page);
   }, [searchTerm, page]);
+  const [openTicketModal, setTicketModal] = useState(false);
+  const [formData, setFormData] = useState({
+    ticketName: "",
+    ticketType: "",
+    price: "",
+    quantity: "",
+    eventId: "",
+  });
+  useEffect(() => {
+    if (eventId) {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        eventId: eventId,
+      }));
+    }
+  }, [eventId]);
+  // Handle dialog open/close
+  const handleOpenTicketModal = () => setTicketModal(true);
+  const handleTicketModalClose = () => setTicketModal(false);
+
+  // Handle form field changes
+  const handleChange = (e: any) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  // Handle form submission
+  const handleSubmitTicket = async () => {
+    try {
+      const response = await fetch("/api/admin/events/ticket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Ticket created successfully:", data);
+      // Optionally, refresh ticket list here
+      handleTicketModalClose();
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+    }
+  };
+
 
 
   return (
@@ -507,6 +558,16 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         <Typography variant="h6" className="font-medium mb-4">
                           Tickets
                         </Typography>
+                        {/* Create Ticket Button */}
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleOpenTicketModal}
+                          className="mb-4"
+                        >
+                          Create Ticket
+                        </Button>
+
                         <Grid container spacing={3}>
                           {tickets.length > 0 ? (
                             tickets.map((ticket, index) => (
@@ -765,6 +826,59 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
             )}
           </Grid>
 
+          {/* Create Ticket Dialog */}
+          <Dialog open={openTicketModal} onClose={handleTicketModalClose}>
+            <DialogTitle>Create Ticket</DialogTitle>
+            <DialogContent>
+              <TextField
+                margin="dense"
+                name="ticketName"
+                label="Event Name"
+                fullWidth
+                variant="outlined"
+                value={formData.ticketName}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="dense"
+                name="ticketType"
+                label="Ticket Type"
+                fullWidth
+                variant="outlined"
+                value={formData.ticketType}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="dense"
+                name="price"
+                label="Price"
+                fullWidth
+                variant="outlined"
+                type="number"
+                value={formData.price}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="dense"
+                name="quantity"
+                label="Quantity"
+                fullWidth
+                variant="outlined"
+                type="number"
+                value={formData.quantity}
+                onChange={handleChange}
+              />
+
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleTicketModalClose} color="secondary">
+                Cancel
+              </Button>
+              <Button onClick={handleSubmitTicket} color="primary" variant="contained">
+                Submit
+              </Button>
+            </DialogActions>
+          </Dialog>
           <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
             <DialogTitle>Send Email</DialogTitle>
             <DialogContent>
