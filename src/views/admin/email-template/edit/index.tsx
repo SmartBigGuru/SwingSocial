@@ -63,7 +63,7 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
     },
   }));
 
-  const updateTemplate = async (design: any) => {
+  const updateTemplate = async (design: any,html:any) => {
     try {
       const response = await fetch("/api/admin/emailtemplate/update", {
         method: "POST",
@@ -75,8 +75,8 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
           alias,
           subject,
           templateName: name,
-          qbody: JSON.stringify(design), // Save design as JSON string
-          qsjsonbody: JSON.stringify(design),
+          qbody: html, // Save design as JSON string
+          qsjsonbody: design,
           qactive: true, // Default to true
           qtype: 1, // Default type
           qtemplateid: templateId, // Example template ID
@@ -108,13 +108,14 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
     }
 
     unlayer.exportHtml((data) => {
-      const { design } = data; // Exported design
-      if (!design) {
+      // const { design } = data; // Exported design
+      const { design: jsonBody, html: qbody } = data;
+      if (!jsonBody) {
         toast.error("Failed to export design!");
         return;
       }
 
-      updateTemplate(design); // Call API to update template
+      updateTemplate(jsonBody,qbody); // Call API to update template
     });
   };
 
