@@ -125,3 +125,10 @@ code {
   background-color: rgb(var(--mui-palette-info-mainChannel) / 0.08);
   border: 0;
 }
+.swal-custom-popup {
+  z-index: 2000 !important; /* Ensure this is higher than your modal's z-index */
+}
+
+.swal2-backdrop-show {
+  z-index: 1999 !important; /* Ensure backdrop also appears above the modal */
+}

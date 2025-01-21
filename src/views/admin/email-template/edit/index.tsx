@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import EmailEditor, { EditorRef, EmailEditorProps } from "react-email-editor";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 
 export interface EditPromocodeHandle {
   open: () => void;
@@ -108,14 +109,35 @@ const EditPromocodeDialogue = forwardRef<EditPromocodeHandle, RefreshProps>((pro
     }
 
     unlayer.exportHtml((data) => {
-      // const { design } = data; // Exported design
       const { design: jsonBody, html: qbody } = data;
+
       if (!jsonBody) {
         toast.error("Failed to export design!");
         return;
       }
 
-      updateTemplate(jsonBody,qbody); // Call API to update template
+      // Show SweetAlert confirmation dialog
+      Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to save the template or continue editing?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Save Template",
+        cancelButtonText: "Continue Editing",
+        customClass: {
+          popup: "swal-custom-popup", // Custom class for popup styling
+        },
+        target: "body",
+      }).then((result:any) => {
+        if (result.isConfirmed) {
+          // User chose to save the template
+          updateTemplate(jsonBody, qbody); // Call API to update template
+          // toast.success("Template saved successfully!");
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          // User chose to continue editing
+          // toast.info("Template exported for editing only.");
+        }
+      });
     });
   };
 

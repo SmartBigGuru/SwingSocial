@@ -58,6 +58,7 @@ interface UserType {
   Username: string;
   Email: string;
   AccountType: string;
+  Promocode:string;
   Title: string;
   Price: string;
   AppOrWeb: string;
@@ -416,6 +417,10 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         header: 'Type',
         cell: ({ row }) => <Typography>{row.original.AccountType}</Typography>
       }),
+      columnHelper.accessor('Promocode', {
+        header: 'Promocode',
+        cell: ({ row }) => <Typography>{"NULL"}</Typography>
+      }),
       columnHelper.accessor('AppOrWeb', {
         header: 'AppOrWeb',
         cell: ({ row }) => <Typography>{row.original.AppOrWeb}</Typography>
@@ -545,15 +550,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   return (
     <>
       <Card>
-        <CardHeader title='User Management Panel' action={
-          <Button
-            variant="outlined"
-            startIcon={<Email />}
-            onClick={handleOpenDialog}
-          >
-            Send Email
-          </Button>
-        } />
+        <CardHeader title='User Management Panel'  />
         <div className='scrollbar-custom overflow-x-auto '>
           <table className={tableStyles.table}>
             <thead>
