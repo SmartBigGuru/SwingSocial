@@ -17,6 +17,7 @@ export async function POST(req: any) {
             HtmlBody:htmlBody,
             Messagestream:"outbound"
         };
+        console.log(emailData,"============emailData");
 
         await client.sendEmail(emailData)
         return NextResponse.json({

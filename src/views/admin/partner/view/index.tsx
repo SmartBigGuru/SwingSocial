@@ -17,6 +17,8 @@ import dynamic from 'next/dynamic';
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
 import { any } from "valibot";
+import axios from 'axios';
+
 export interface DetailViewHandle {
   open: (id: string) => void;
 }
@@ -111,8 +113,11 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
 
   const [selectedRsvpProfile, setSelectedRsvpProfile] = useState<any>(null);
   const [selectedAttendeeProfile, setSelectedAttendeeProfile] = useState<any>(null);
+  const [selectedEmail,setSelectedEmail]=useState<any>(null);
+  const [emailType,setEmailType]=useState<any>(null);
 
-  const handleOpenDialog = () => {
+  const handleOpenDialog = (type:any) => {
+    setEmailType(type);
     setOpenDialog(true);
   };
 
@@ -122,13 +127,59 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     setEmailBody('');
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     console.log('Email Subject:', emailSubject);
     console.log('Email Body:', emailBody);
     // Add API call here to send the email
-    handleCloseDialog();
+    // handleCloseDialog();
+    if(emailType=='single'){
+      handleSendSigleUser(selectedEmail)
+    }else{
+      await handleSend(rsvp);
+    }
   };
 
+  const [loading, setLoading] = useState<boolean>(false);
+  const handleSendSigleUser = async (email: any): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/admin/email/test', {
+        email,
+        subject: emailSubject,
+        htmlBody: emailBody,
+      });
+
+      console.log('Response:', response.data);
+      alert('Emails sent successfully!');
+    } catch (error: any) {
+      console.error('Error sending bulk email:', error);
+      alert('Failed to send emails.');
+    } finally {
+      setLoading(false)
+      setOpenDialog(false);
+      setEmailSubject('');
+    }
+  };
+  const handleSend = async (recipients: any): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/admin/events/rsvp/email', {
+        recipients,
+        subject: emailSubject,
+        htmlBody: emailBody,
+      });
+
+      console.log('Response:', response.data);
+      alert('Emails sent successfully!');
+    } catch (error: any) {
+      console.error('Error sending bulk email:', error);
+      alert('Failed to send emails.');
+    } finally {
+      setLoading(false)
+      setOpenDialog(false);
+      setEmailSubject('');
+    }
+  };
   useImperativeHandle(ref, () => ({
     open: (id) => {
       setOpen(true)
@@ -173,6 +224,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
         setRSVP(rsvp || []); // Set RSVP data if available
         setAttendees(attendees || []); // Set Attendees data if available
         setTickets(tickets || []); // Set Tickets data if available
+        setEmailBody(event?.EmailDescription);
       }
 
     } catch (error: any) {
@@ -403,7 +455,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       sortable: false,
       renderCell: (params: any) => (
         <>
-          <IconButton color="primary" aria-label="send-email" onClick={() => console.log(`Sending email to ${params.row.Email}`)}>
+          <IconButton color="primary" aria-label="send-email" onClick={()=>{handleOpenDialog('single');setSelectedEmail(params.row.Email)}}>
             <Email />
           </IconButton>
           <IconButton color="error" aria-label="remove-rsvp" onClick={() => handleRemoveRSVP(params.row.ProfileId)}>
@@ -744,7 +796,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         <Button
                           variant="outlined"
                           startIcon={<Email />}
-                          onClick={handleOpenDialog}
+                          onClick={()=>handleOpenDialog('multiple')}
                         >
                           Send Email
                         </Button>
