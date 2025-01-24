@@ -509,7 +509,7 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
             <ReactQuill
               theme="snow"
               value={emailDescription}
-              onChange={setEmailDescription}
+              onChange={(e) => { setEmailDescription(e); }}
               placeholder="Write your Email Description here..."
             />
 

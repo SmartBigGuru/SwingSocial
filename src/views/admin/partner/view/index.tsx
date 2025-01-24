@@ -16,6 +16,7 @@ import dynamic from 'next/dynamic';
 // Dynamically import a rich-text editor (like React Quill)
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
+import { any } from "valibot";
 export interface DetailViewHandle {
   open: (id: string) => void;
 }
@@ -84,7 +85,8 @@ interface ContractType {
 const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const { refresh } = props
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [attLoading, setAttLoading] = useState(false);
   const [event, setEvent] = useState<AdvertiserType | undefined>(undefined)
   const [rsvp, setRSVP] = useState<any[]>([]);
   const [attendees, setAttendees] = useState<any[]>([]);
@@ -95,15 +97,21 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const isSmScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('sm'))
   const isMdScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('md'))
   const isLgScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'))
-  const [userProfiles, setUserProfiles] = useState<any[]>([]); // User profiles state
+  const [attendeeUserProfiles, setAttendeeProfiles] = useState<any[]>([]); // User profiles state
+  const [rsvpUserProfiles, setRsvpUserProfiles] = useState<any[]>([]);
   const [selectedProfileRsvp, setSelectedProfileRSVP] = useState(''); // Selected user profile
   const [selectedProfileAttendee, setSelectedProfileAttendee] = useState(''); // Selected user profile
 
   const [openDialog, setOpenDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [rsvpSearchTerm, setRsvpSearchTerm] = useState<string>('');
+  const [attendeeSearchTerm, setAttendeeSearchTerm] = useState<string>('');
   const [page, setPage] = useState(1);
+
+  const [selectedRsvpProfile, setSelectedRsvpProfile] = useState<any>(null);
+  const [selectedAttendeeProfile, setSelectedAttendeeProfile] = useState<any>(null);
+
   const handleOpenDialog = () => {
     setOpenDialog(true);
   };
@@ -120,19 +128,20 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     // Add API call here to send the email
     handleCloseDialog();
   };
+
   useImperativeHandle(ref, () => ({
     open: (id) => {
       setOpen(true)
       fetchData(id);
       setEventId(id)
 
-      fetchUserProfiles(searchTerm, page);
+      fetchUserProfiles(rsvpSearchTerm, page, "rsvp");
+      fetchUserProfiles(rsvpSearchTerm, page, "attendee");
     }
   }))
 
   const fetchData = async (eventId: string) => {
     console.log(eventId, "======eventId in view");
-    setLoading(true);
 
     try {
       // Fetch event data using the custom API
@@ -169,7 +178,8 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     } catch (error: any) {
       console.error('Error fetching data:', error.message);
     } finally {
-      setLoading(false);
+      setRsvpLoading(false);
+      setAttLoading(false);
     }
   };
 
@@ -195,12 +205,19 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
 
   const handleAddRSVP = async (event: React.MouseEvent<HTMLButtonElement>) => {
     try {
+      event.preventDefault();
+
+      if (selectedRsvpProfile) {
+        console.log('Selected RSVP Profile:', selectedRsvpProfile);
+      }
+
+      const profileId = selectedRsvpProfile.Id;
       const response = await fetch(`/api/admin/events/rsvp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ eventId, selectedProfileRsvp }),
+        body: JSON.stringify({ eventId, profileId }),
       });
 
       if (!response.ok) {
@@ -217,6 +234,38 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       console.error('Error adding RSVP:', error.message);
     }
   };
+
+  const handleAddAttendees = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    try {
+      event.preventDefault();
+
+      if (selectedAttendeeProfile) {
+        console.log('Selected RSVP Profile:', selectedAttendeeProfile);
+      }
+
+      const profileId = selectedAttendeeProfile.Id;
+      const response = await fetch(`/api/admin/events/attendee`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ eventId, profileId }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to add RSVP:', response.statusText);
+        return;
+      }
+
+      const newAttendees = await response.json();
+
+      // Update the local state by adding the new RSVP
+      setAttendees(prevAttendees => [...prevAttendees, { ProfileId: selectedAttendeeProfile, ...newAttendees }]);
+      console.log('RSVP added successfully');
+    } catch (error: any) {
+      console.error('Error adding RSVP:', error.message);
+    }
+  }
 
   const handleExportCSV = () => {
     console.log("Exporting RSVP/Attendees as CSV");
@@ -391,9 +440,14 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
 
   // Fetch user profiles
   // Function to fetch user profiles with search and pagination
-  const fetchUserProfiles = async (search: string, page: number) => {
+  const fetchUserProfiles = async (search: string, page: number, flag: string) => {
     try {
-      setLoading(true);
+      if (flag === "rsvp") {
+        setRsvpLoading(true);
+      }
+      else {
+        setAttLoading(true);
+      }
       const response = await fetch(
         `/api/admin/user?search=${search}&page=${page}&size=100&type=Username`
       );
@@ -402,30 +456,32 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
         return;
       }
       const data: any = await response.json();
+
       if (page === 1) {
-        setUserProfiles(data?.profiles || []);
+        if (flag === "rsvp") {
+          setRsvpUserProfiles(data?.profiles || []);
+        } else {
+          setAttendeeProfiles(data?.profiles || []);
+        }
       } else {
         // Append results for pagination
-        setUserProfiles((prevProfiles: any) => {
-          return [...prevProfiles, ...(data?.profiles || [])];
-        });
+        if (flag === "rsvp") {
+          setRsvpUserProfiles((prevProfiles: any) => {
+            return [...prevProfiles, ...(data?.profiles || [])];
+          });
+        }
+        else {
+          setAttendeeProfiles((prevProfiles: any) => {
+            return [...prevProfiles, ...(data?.profiles || [])];
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching user profiles:', error);
     } finally {
-      setLoading(false);
+      setAttLoading(false);
+      setRsvpLoading(false);
     }
-  };
-
-  // Handle input change for search
-  // Handle input change for search
-  const handleSearchChange = (
-    event: React.SyntheticEvent,
-    value: string,
-    reason: AutocompleteInputChangeReason
-  ) => {
-    setSearchTerm(value); // Use the `value` parameter for the search term
-    setPage(1); // Reset to page 1 for new searches
   };
 
 
@@ -442,8 +498,13 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
 
   // Call this on component mount
   useEffect(() => {
-    fetchUserProfiles(searchTerm, page);
-  }, [searchTerm, page]);
+    fetchUserProfiles(rsvpSearchTerm, page, "rsvp");
+  }, [rsvpSearchTerm, page]);
+
+  useEffect(() => {
+    fetchUserProfiles(attendeeSearchTerm, page, "attendee");
+  }, [attendeeSearchTerm, page])
+
   const [openTicketModal, setTicketModal] = useState(false);
   const [formData, setFormData] = useState({
     ticketName: "",
@@ -452,6 +513,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     quantity: "",
     eventId: "",
   });
+
   useEffect(() => {
     if (eventId) {
       setFormData((prevFormData) => ({
@@ -671,13 +733,13 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         >
                           Export CSV
                         </Button>
-                        <Button
+                        {/* <Button
                           variant="outlined"
                           startIcon={<FileDownload />}
                           onClick={handleExportPDF}
                         >
                           Export PDF
-                        </Button>
+                        </Button> */}
 
                         <Button
                           variant="outlined"
@@ -691,15 +753,22 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                       <div className="flex gap-3 mb-4">
                         <FormControl fullWidth>
                           <Autocomplete
-                            options={userProfiles}
+                            options={rsvpUserProfiles}
                             getOptionLabel={(option: any) => option.Username || ''}
-                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfileRsvp) || null}
-                            onChange={(event, newValue) => setSelectedProfileRSVP(newValue?.ProfileId || null)}
-                            onInputChange={handleSearchChange}
-                            ListboxProps={{
-                              onScroll: handleScroll, // Attach the scroll event handler
+                            value={selectedRsvpProfile}
+                            inputValue={rsvpSearchTerm}
+                            onChange={(event, newValue) => {
+                              setSelectedRsvpProfile(newValue);
+                              setSelectedProfileRSVP(newValue?.ProfileId || '');
                             }}
-                            loading={loading}
+                            onInputChange={(event, value) => {
+                              setRsvpSearchTerm(value);
+                              setPage(1);
+                            }}
+                            ListboxProps={{
+                              onScroll: handleScroll,
+                            }}
+                            loading={rsvpLoading}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
@@ -708,7 +777,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                                   ...params.InputProps,
                                   endAdornment: (
                                     <>
-                                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                      {rsvpLoading ? <CircularProgress color="inherit" size={20} /> : null}
                                       {params.InputProps.endAdornment}
                                     </>
                                   ),
@@ -739,8 +808,6 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                       />
                     </div>
 
-
-
                     <div className="w-full mt-6">
                       <Typography variant="h6" className="font-medium mb-2">
                         Attendees List
@@ -753,13 +820,13 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         >
                           Export CSV
                         </Button>
-                        <Button
+                        {/* <Button
                           variant="outlined"
                           startIcon={<FileDownload />}
                           onClick={handleExportPDFAtten}
                         >
                           Export PDF
-                        </Button>
+                        </Button> */}
                         <Button
                           variant="outlined"
                           startIcon={<Email />}
@@ -772,15 +839,22 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
 
                         <FormControl fullWidth>
                           <Autocomplete
-                            options={userProfiles}
+                            options={attendeeUserProfiles}
                             getOptionLabel={(option: any) => option.Username || ''}
-                            value={userProfiles.find((profile: any) => profile.ProfileId === selectedProfileAttendee) || null}
-                            onChange={(event, newValue) => setSelectedProfileAttendee(newValue?.ProfileId || null)}
-                            onInputChange={handleSearchChange}
-                            ListboxProps={{
-                              onScroll: handleScroll, // Attach the scroll event handler
+                            value={selectedAttendeeProfile}
+                            inputValue={attendeeSearchTerm}
+                            onChange={(event, newValue) => {
+                              setSelectedAttendeeProfile(newValue);
+                              setSelectedProfileAttendee(newValue?.ProfileId || '');
                             }}
-                            loading={loading}
+                            onInputChange={(event, value) => {
+                              setAttendeeSearchTerm(value);
+                              setPage(1);
+                            }}
+                            ListboxProps={{
+                              onScroll: handleScroll,
+                            }}
+                            loading={attLoading}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
@@ -789,7 +863,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                                   ...params.InputProps,
                                   endAdornment: (
                                     <>
-                                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                      {attLoading ? <CircularProgress color="inherit" size={20} /> : null}
                                       {params.InputProps.endAdornment}
                                     </>
                                   ),
@@ -799,7 +873,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                           />
 
                         </FormControl>
-                        <Button variant="contained" color="primary" onClick={(e) => handleAddRSVP(e)}>
+                        <Button variant="contained" color="primary" onClick={(e) => handleAddAttendees(e)}>
                           Add Attendees
                         </Button>
                       </div>

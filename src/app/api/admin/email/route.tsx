@@ -8,7 +8,6 @@
  */
 
 // Next Imports
-import { responsiveFontSizes } from '@mui/material';
 import { NextResponse } from 'next/server'
 import { ServerClient } from 'postmark';
 import { Pool } from 'pg';
@@ -25,7 +24,7 @@ const pool = new Pool({
 
 
 
-function chunkArray(array:any, size:any) {
+function chunkArray(array: any, size: any) {
   const chunks = [];
   for (let i = 0; i < array.length; i += size) {
     chunks.push(array.slice(i, i + size));
@@ -49,9 +48,12 @@ export async function POST(req: any) {
     // Split the recipients into chunks of 40
     const recipientChunks = chunkArray(recipients, 40);
 
+    console.log(recipients.length);
+    console.log(recipientChunks.length);
+
     for (const chunk of recipientChunks) {
       // Prepare email objects for the current chunk
-      const emailBatch = chunk.map((recipient:any) => ({
+      const emailBatch = chunk.map((recipient: any) => ({
         From: 'info@swingsocial.co',
         To: recipient.email, // Assuming each recipient has an `email` property
         Subject: subject,
@@ -62,8 +64,9 @@ export async function POST(req: any) {
 
       // Send the email batch
       try {
-        await client.sendEmailBatch(emailBatch);
-        console.log(`Batch of ${emailBatch.length} emails sent successfully.`);
+        // await client.sendEmailBatch(emailBatch);
+
+        //console.log(`Batch of ${emailBatch.length} emails sent successfully.`);
       } catch (error) {
         console.error("Error sending email batch:", error);
       }
