@@ -37,13 +37,14 @@ export async function POST(req: Request) {
     }
 
  // Convert images to a valid PostgreSQL array format
- const imagesArray = qimage.map((url: string) => url).join(",");
+ const imagesArray =  qimage.join(",");
+ console.log(imagesArray);
  // const formattedImagesArray = imagesArray; // PostgreSQL array format
 
  const formattedImagesArray = `{${imagesArray}}`;
     // Call the SQL function to insert RSVP
     const insertQuery = `SELECT * FROM event_edit_images($1,$2)`;
-    const result = await pool.query(insertQuery, [qeventid,formattedImagesArray]);
+    const result = await pool.query(insertQuery, [qeventid,imagesArray]);
 
     if (result.rowCount === 0) {
       return NextResponse.json(

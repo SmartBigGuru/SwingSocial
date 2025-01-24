@@ -153,7 +153,7 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
         if (selectedFiles?.length > 0) {
           let imageUrls = [];
           for (let i = 0; i < selectedFiles?.length; i++) {
-            let imageUrl = await uploadImage(selectedFiles[0]);
+            let imageUrl = await uploadImage(selectedFiles[i]);
             imageUrls.push(imageUrl);
           }
             // Call the API with promo code data
