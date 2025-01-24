@@ -176,7 +176,7 @@ export async function DELETE(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const {qeventid, qname,start , qend } = body;
+    const {qeventid,qname,start,qend,venue,category} = body;
 
     if (!qeventid ) {
       return NextResponse.json(
@@ -185,15 +185,26 @@ export async function POST(req: Request) {
       );
     }
     // Call the SQL function to insert RSVP
-    const insertQuery = `SELECT * FROM event_edit_($1, $2, $3,$4)`;
+    const insertQuery = `SELECT * FROM event_edit_($1,$2,$3,$4)`;
     const result = await pool.query(insertQuery, [qeventid, qname,start , qend ]);
 
+    //
+     // Call the SQL function to insert RSVP
+     const updateVenue = `SELECT * FROM event_edit_venue($1,$2,$3)`;
+     const updateVenueResult = await pool.query(updateVenue, [qeventid, venue,category ]);
     if (result.rowCount === 0) {
       return NextResponse.json(
-        { error: `Failed to add RSVP for Event ID ${qeventid}` },
+        { error: `Failed update event` },
         { status: 500 }
       );
     }
+    if (updateVenueResult.rowCount === 0) {
+      return NextResponse.json(
+        { error: `Failed to update event vanue and category` },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       { message: `Event successfully Updated.` },
       { status: 201 }

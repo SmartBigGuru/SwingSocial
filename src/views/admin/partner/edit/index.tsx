@@ -128,6 +128,8 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
           qname: name,
           start: startTime,
           qend: endTime,
+          venue:eventData?.venue,
+          category:eventData?.category
         }),
       });
 
@@ -149,8 +151,11 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
           });
         }
         if (selectedFiles?.length > 0) {
+          let imageUrls = [];
           for (let i = 0; i < selectedFiles?.length; i++) {
             let imageUrl = await uploadImage(selectedFiles[0]);
+            imageUrls.push(imageUrl);
+          }
             // Call the API with promo code data
             const response = await fetch('/api/admin/events/images', {
               method: 'POST',
@@ -159,10 +164,10 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
               },
               body: JSON.stringify({
                 qeventid: id,
-                qimage: imageUrl
+                qimage: imageUrls
               }),
             });
-          }
+
         }
         toast.success('Event updated successfully!', {
           autoClose: 5000,

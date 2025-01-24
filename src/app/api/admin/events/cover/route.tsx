@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
 
     // Call the SQL function to insert RSVP
-    const insertQuery = `SELECT * FROM event_edit_cover($1, $2)`;
+    const insertQuery = `SELECT * FROM event_edit_cover($1,$2)`;
     const result = await pool.query(insertQuery, [qeventid, qcoverimage]);
 
     if (result.rowCount === 0) {
