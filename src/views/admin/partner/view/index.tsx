@@ -808,7 +808,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                       />
                     </div>
 
-                    <div className="w-full mt-6">
+                    {/* <div className="w-full mt-6">
                       <Typography variant="h6" className="font-medium mb-2">
                         Attendees List
                       </Typography>
@@ -820,13 +820,6 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         >
                           Export CSV
                         </Button>
-                        {/* <Button
-                          variant="outlined"
-                          startIcon={<FileDownload />}
-                          onClick={handleExportPDFAtten}
-                        >
-                          Export PDF
-                        </Button> */}
                         <Button
                           variant="outlined"
                           startIcon={<Email />}
@@ -892,10 +885,9 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         disableRowSelectionOnClick
                         getRowId={(row: any) => row.ProfileId}
                       />
-                    </div>
+                    </div> */}
                   </Grid>
                 </Grid>
-
               </CardContent>
             )}
           </Grid>
@@ -974,7 +966,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
               <ReactQuill
                 theme="snow"
                 value={emailBody}
-                onChange={setEmailBody}
+                onChange={(e) => setEmailBody(e)}
                 placeholder="Write your email here..."
               />
             </DialogContent>
