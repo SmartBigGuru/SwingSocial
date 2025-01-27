@@ -1,10 +1,43 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { Autocomplete, CardContent, CardActions, Box, Button, Card, CardMedia, CircularProgress, Dialog, DialogActions, DialogContent, Divider, FormControl, FormControlLabel, Grid, TextField, Typography, IconButton } from "@mui/material"
+import {
+  Paper,
+  Autocomplete,
+  CardContent,
+  CardActions,
+  Box,
+  Button,
+  Card,
+  CardMedia,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  TextField,
+  Typography,
+  IconButton,
+  ToggleButton,
+  ToggleButtonGroup,
+  Radio,
+  RadioGroup,
+  Checkbox,
+  Stack,
+  MenuItem,
+  Select,
+} from "@mui/material"
 import { toast } from "react-toastify";
 import { AddCircleOutline } from "@mui/icons-material";
 import dynamic from 'next/dynamic';
+import moment from 'moment';
+import { DatePicker } from '@mui/x-date-pickers';
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
 
 // Dynamically import a rich-text editor (like React Quill)
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
@@ -34,11 +67,241 @@ interface EventData {
   images: string[]; // Add images as an array of strings
 }
 
+const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+
+
+interface EventRepeatsProps {
+  eventData: any;
+  setEventData: (data: any) => void;
+}
+
+
+const EventRepeats: React.FC<EventRepeatsProps> = ({ eventData, setEventData }) => {
+  const handleTypeChange = (_: React.MouseEvent<HTMLElement>, newType: 'none' | 'daily' | 'weekly' | 'monthly') => {
+    if (newType !== null) {
+      setEventData({
+        ...eventData,
+        repeats: {
+          ...eventData.repeats,
+          type: newType
+        }
+      });
+    }
+  };
+
+  const handleIntervalChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newInterval = parseInt(event.target.value) || 1;
+    setEventData({
+      ...eventData,
+      repeats: {
+        ...eventData.repeats,
+        interval: newInterval
+      }
+    });
+  };
+
+  const handleWeekDayToggle = (index: number) => {
+    const newWeekDays = [...(eventData.repeats?.weekDays || Array(7).fill(false))];
+    newWeekDays[index] = !newWeekDays[index];
+    setEventData({
+      ...eventData,
+      repeats: {
+        ...eventData.repeats,
+        weekDays: newWeekDays
+      }
+    });
+  };
+
+  const handleStopConditionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setEventData({
+      ...eventData,
+      repeats: {
+        ...eventData.repeats,
+        stopCondition: event.target.value
+      }
+    });
+  };
+
+  // Initialize repeats if it doesn't exist
+  if (!eventData.repeats) {
+    setEventData({
+      ...eventData,
+      repeats: {
+        type: 'none',
+        interval: 1,
+        stopCondition: 'never',
+        untilDate: null,
+        times: 1,
+        weekDays: Array(7).fill(false),
+        monthDay: 1
+      }
+    });
+  }
+
+  return (
+    <Paper sx={{ p: 3, bgcolor: '#fff' }}>
+      <Typography variant="h6" gutterBottom>
+        Repeats
+      </Typography>
+
+      <ToggleButtonGroup
+        value={eventData.repeats?.type || 'none'}
+        exclusive
+        onChange={handleTypeChange}
+        aria-label="repeat frequency"
+        sx={{ mb: 3, width: '100%' }}
+      >
+        <ToggleButton value="none" sx={{ flex: 1 }}>None</ToggleButton>
+        <ToggleButton value="daily" sx={{ flex: 1 }}>Daily</ToggleButton>
+        <ToggleButton value="weekly" sx={{ flex: 1 }}>Weekly</ToggleButton>
+        <ToggleButton value="monthly" sx={{ flex: 1 }}>Monthly</ToggleButton>
+      </ToggleButtonGroup>
+
+      {eventData.repeats?.type !== 'none' && (
+        <>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+            <Typography>Repeat every</Typography>
+            <TextField
+              type="number"
+              value={eventData.repeats?.interval || 1}
+              onChange={handleIntervalChange}
+              inputProps={{ min: 1 }}
+              sx={{ width: '80px' }}
+            />
+            <Typography>
+              {eventData.repeats?.type === 'daily' && 'days'}
+              {eventData.repeats?.type === 'weekly' && 'weeks'}
+              {eventData.repeats?.type === 'monthly' && 'months on day'}
+            </Typography>
+            {eventData.repeats?.type === 'monthly' && (
+              <Select
+                value={eventData.repeats?.monthDay || 1}
+                onChange={(e) => setEventData({
+                  ...eventData,
+                  repeats: {
+                    ...eventData.repeats,
+                    monthDay: e.target.value
+                  }
+                })}
+                sx={{ width: '80px' }}
+              >
+                {[...Array(31)].map((_, i) => (
+                  <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
+                ))}
+              </Select>
+            )}
+          </Stack>
+
+          {eventData.repeats?.type === 'weekly' && (
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ mb: 1 }}>Repeat on</Typography>
+              <Stack direction="row" spacing={1}>
+                {weekDays.map((day, index) => (
+                  <Box key={day} sx={{ textAlign: 'center' }}>
+                    <Checkbox
+                      checked={eventData.repeats?.weekDays?.[index] || false}
+                      onChange={() => handleWeekDayToggle(index)}
+                    />
+                    <Typography variant="body2">{day}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          <Box>
+            <Typography variant="h6" gutterBottom>Stop Condition</Typography>
+            <FormControl component="fieldset">
+              <RadioGroup
+                value={eventData.repeats?.stopCondition || 'never'}
+                onChange={handleStopConditionChange}
+              >
+                <FormControlLabel
+                  value="never"
+                  control={<Radio />}
+                  label={
+                    <Box>
+                      <Typography>Never Stop</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        The event will repeat for the next year
+                      </Typography>
+                    </Box>
+                  }
+                />
+                <FormControlLabel
+                  value="date"
+                  control={<Radio />}
+                  label={
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Box>
+                        <Typography>Run until a specific date</Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          The event will repeat until the date you specify
+                        </Typography>
+                      </Box>
+                      {eventData.repeats?.stopCondition === 'date' && (
+                        <LocalizationProvider dateAdapter={AdapterMoment}>
+                          <DatePicker
+                            value={eventData.repeats?.untilDate || null}
+                            onChange={(newDate) => setEventData({
+                              ...eventData,
+                              repeats: {
+                                ...eventData.repeats,
+                                untilDate: newDate
+                              }
+                            })}
+                          />
+                        </LocalizationProvider>
+                      )}
+                    </Stack>
+                  }
+                />
+                <FormControlLabel
+                  value="times"
+                  control={<Radio />}
+                  label={
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Box>
+                        <Typography>Run until a specific number of times</Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          The event will repeat the number of times you specify
+                        </Typography>
+                      </Box>
+                      {eventData.repeats?.stopCondition === 'times' && (
+                        <TextField
+                          type="number"
+                          value={eventData.repeats?.times || 1}
+                          onChange={(e) => setEventData({
+                            ...eventData,
+                            repeats: {
+                              ...eventData.repeats,
+                              times: parseInt(e.target.value) || 1
+                            }
+                          })}
+                          inputProps={{ min: 1 }}
+                          sx={{ width: '80px' }}
+                        />
+                      )}
+                    </Stack>
+                  }
+                />
+              </RadioGroup>
+            </FormControl>
+          </Box>
+        </>
+      )}
+    </Paper>
+  );
+};
+
 const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref) => {
   const { refresh, id, eventDetail } = props;
   const [openDialog, setOpenDialog] = useState(false);
   const [adding, setAdding] = useState(false);
   const [emptyError, setEmptyError] = useState(false);
+
+
 
   const [eventData, setEventData] = useState<any>({
     id: '',
@@ -128,8 +391,8 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
           qname: name,
           start: startTime,
           qend: endTime,
-          venue:eventData?.venue,
-          category:eventData?.category
+          venue: eventData?.venue,
+          category: eventData?.category
         }),
       });
 
@@ -156,17 +419,17 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
             let imageUrl = await uploadImage(selectedFiles[i]);
             imageUrls.push(imageUrl);
           }
-            // Call the API with promo code data
-            const response = await fetch('/api/admin/events/images', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                qeventid: id,
-                qimage: imageUrls
-              }),
-            });
+          // Call the API with promo code data
+          const response = await fetch('/api/admin/events/images', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              qeventid: id,
+              qimage: imageUrls
+            }),
+          });
 
         }
         toast.success('Event updated successfully!', {
@@ -305,6 +568,13 @@ const EditEventDialogue = forwardRef<EditEventHandle, RefreshProps>((props, ref)
               InputLabelProps={{ shrink: true }}
               value={eventData.endTime}
               onChange={(e) => setEventData({ ...eventData, endTime: e.target.value })}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <EventRepeats
+              eventData={eventData}
+              setEventData={setEventData}
             />
           </Grid>
 

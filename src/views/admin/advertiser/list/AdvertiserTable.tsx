@@ -57,8 +57,9 @@ interface UserType {
   Avatar: string;
   Username: string;
   Email: string;
+  Location: string;
   AccountType: string;
-  Promocode:string;
+  Promocode: string;
   Title: string;
   Price: string;
   AppOrWeb: string;
@@ -413,6 +414,10 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         header: 'Email',
         cell: ({ row }) => row.original.Email && <Typography>{row.original.Email}</Typography>
       }),
+      columnHelper.accessor('Location', {
+        header: 'Address',
+        cell: ({ row }) => row.original.Location && <Typography>{row.original.Location}</Typography>
+      }),
       columnHelper.accessor('AccountType', {
         header: 'Type',
         cell: ({ row }) => <Typography>{row.original.AccountType}</Typography>
@@ -550,7 +555,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   return (
     <>
       <Card>
-        <CardHeader title='User Management Panel'  />
+        <CardHeader title='User Management Panel' />
         <div className='scrollbar-custom overflow-x-auto '>
           <table className={tableStyles.table}>
             <thead>

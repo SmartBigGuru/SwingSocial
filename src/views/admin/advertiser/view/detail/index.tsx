@@ -3,24 +3,7 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 
 import { CardContent, Chip, Dialog, Divider, Grid, Typography, useMediaQuery } from "@mui/material";
 
-import classNames from "classnames";
-
 import type { Theme } from "@mui/material/styles/createTheme";
-
-
-import Timeline from "@mui/lab/Timeline";
-import TimelineItem, { timelineItemClasses } from "@mui/lab/TimelineItem";
-import TimelineSeparator from "@mui/lab/TimelineSeparator";
-import TimelineDot from "@mui/lab/TimelineDot";
-import TimelineConnector from "@mui/lab/TimelineConnector";
-import TimelineContent from "@mui/lab/TimelineContent";
-
-import { Commet } from "react-loading-indicators";
-
-import { supabase } from "@/utils/supabase";
-import CustomAvatar from "@/@core/components/mui/Avatar";
-
-
 
 export interface DetailViewHandle {
   open: (id: string) => void;
