@@ -63,8 +63,7 @@ export async function POST(req: any) {
 
       // Send the email batch
       try {
-        // await client.sendEmailBatch(emailBatch);
-
+        await client.sendEmailBatch(emailBatch);
         //console.log(`Batch of ${emailBatch.length} emails sent successfully.`);
       } catch (error) {
         console.error("Error sending email batch:", error);
