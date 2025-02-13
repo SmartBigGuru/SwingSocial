@@ -131,36 +131,34 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
   const handleProfileClick = async (profile: any) => {
     console.log(`Impersonating ${JSON.stringify(profile)}`); // Debugging: log the impersonation
-  
+
     try {
-      const response = await fetch("/api/admin/goto", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: profile }),
-      });
-  
-      const data = await response.json();
-      console.log(data);
-  
-      // JWT decode if needed
-      const decoded = jwtDecode(data.jwtToken);
-  
-      // Prepare the data to pass to the new window
-      const params = new URLSearchParams({
-        jwtToken: data.jwtToken,
-        currentProfileId: data.currentProfileId,
-        profileUsername: data.currentuserName,
-      });
-  
-      // Open the new window with the data in the query string
-      const newWindowUrl = `https://swing-social-website.vercel.app/?${params.toString()}`;
-      window.open(newWindowUrl, "_blank");
+        const response = await fetch("/api/admin/goto", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email: profile }),
+        });
+
+        const data = await response.json();
+        console.log(data);
+
+        const decoded = jwtDecode(data.jwtToken);
+        localStorage.setItem('loginInfo', data.jwtToken);
+        localStorage.setItem('logged_in_profile', data.currentProfileId);
+        localStorage.setItem('profileUsername', data.currentuserName);
+
+        // Use the provided URL or default to "http://localhost:3000/home"
+        const targetUrl = data.url || "http://localhost:3000/login";
+
+        // Open the new site and pass the JWT token via query params
+        const urlWithToken = `${targetUrl}?token=${data.jwtToken}`;
+        window.open(urlWithToken, "_blank");
     } catch (error) {
-      console.error("Error impersonating profile:", error);
+        console.error("Error impersonating profile:", error);
     }
-  };
+};
 
   const changeParam = () => {
     const searchParams = new URLSearchParams()
