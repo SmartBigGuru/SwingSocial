@@ -10,7 +10,7 @@ import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
 import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
 import { CardHeader, Skeleton, TablePagination, Typography, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
 import classNames from 'classnames'
-
+import { jwtDecode } from 'jwt-decode';
 import { toast } from 'react-toastify'
 
 import { supabase } from '@/utils/supabase'
@@ -128,6 +128,39 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
       fetchData();
     }
   }))
+
+  const handleProfileClick = async (profile: any) => {
+    console.log(`Impersonating ${JSON.stringify(profile)}`); // Debugging: log the impersonation
+  
+    try {
+      const response = await fetch("/api/admin/goto", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: profile.Email }),
+      });
+  
+      const data = await response.json();
+      console.log(data);
+  
+      // JWT decode if needed
+      const decoded = jwtDecode(data.jwtToken);
+  
+      // Prepare the data to pass to the new window
+      const params = new URLSearchParams({
+        jwtToken: data.jwtToken,
+        currentProfileId: data.currentProfileId,
+        profileUsername: data.currentuserName,
+      });
+  
+      // Open the new window with the data in the query string
+      const newWindowUrl = `https://swing-social-website.vercel.app/?${params.toString()}`;
+      window.open(newWindowUrl, "_blank");
+    } catch (error) {
+      console.error("Error impersonating profile:", error);
+    }
+  };
 
   const changeParam = () => {
     const searchParams = new URLSearchParams()
@@ -486,6 +519,16 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
                     console.log("Clicked History");
                     setOpenHistory(true);
                     setProfileId(row?.original?.Id);
+                  },
+                  className: 'flex items-center gap-2'
+                }
+              },
+              {
+                text: 'Impersonate',
+                menuItemProps: {
+                  onClick: () => {
+                    console.log("Clicked Impersonate");
+                    handleProfileClick(row.original.Email);
                   },
                   className: 'flex items-center gap-2'
                 }
