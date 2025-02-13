@@ -80,7 +80,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ data: data, userId: advertiser?.id }),
+      body: JSON.stringify({ data: data, userId: advertiser?.Id }),
     });
     setOpen(false)
     setOpenPopOver(false)
