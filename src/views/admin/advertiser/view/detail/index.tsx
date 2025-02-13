@@ -1,7 +1,7 @@
 'use client'
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
-import { CardContent, Chip, Dialog, Divider, Grid, Typography, useMediaQuery } from "@mui/material";
+import { CardContent, Chip, Dialog, Divider, Grid, Popover, Typography, useMediaQuery } from "@mui/material";
 
 import type { Theme } from "@mui/material/styles/createTheme";
 
@@ -58,6 +58,7 @@ interface ContractType {
 const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const { refresh } = props
   const [open, setOpen] = useState(false)
+  const [openPopOver, setOpenPopOver] = useState(false);
   const [loading, setLoading] = useState(false)
   const [advertiser, setAdvertiser] = useState<any>({})
   const [contract, setContract] = useState<ContractType[] | undefined>(undefined)
@@ -71,6 +72,27 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       fetchData(id)
     }
   }))
+
+  const deleteImage = async (data: any) => {
+    console.log(data, "======data in deleteImage");
+    await fetch(`/api/admin/deleteImage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: data, userId: advertiser?.id }),
+    });
+    setOpen(false)
+    setOpenPopOver(false)
+    setLoading(true);
+
+  }
+
+  useEffect(() => {
+    if (open && refresh) {
+      refresh()
+    }
+  }, [loading])
 
   const fetchData = async (userId: string) => {
     console.log(userId, "======userId in view");
@@ -176,7 +198,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     {/* Avatar and Basic Info */}
     <div className="relative -mt-16 px-6">
       <div className="flex items-center gap-6">
-        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg" onMouseOver={() => {setOpenPopOver(!openPopOver); console.log("openPopOver", openPopOver)}} >
           <img
             src={advertiser?.Avatar || '/images/avatars/default-avatar.png'}
             alt="user-avatar"
@@ -288,13 +310,12 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
               </Typography>
               <Divider className="mb-4" />
               <div>
-  <Typography>
-    {advertiser?.About
-      ? advertiser.About.replace(/<\/?[^>]+(>|$)/g, "")
-      : 'No additional information provided.'}
-  </Typography>
-</div>
-
+            <Typography>
+              {advertiser?.About
+                ? advertiser.About.replace(/<\/?[^>]+(>|$)/g, "")
+                : 'No additional information provided.'}
+            </Typography>
+          </div>
               <div className="mt-4">
                 <Typography variant="body2" color="textSecondary">
                   Swing Style Tags:
@@ -310,7 +331,135 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     </CardContent>
   </div>
 </Dialog>
-    </>
+<Popover
+  open={openPopOver}
+  onClose={() => setOpenPopOver(false)}
+  anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+  transformOrigin={{ vertical: 'center', horizontal: 'center' }}
+>
+  <div
+    style={{
+      width: '60vh',
+      height: '60vh',
+      position: 'relative',
+      border: '1px solid #ddd',
+      borderRadius: '10px',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      overflow: 'hidden',
+      backgroundColor: '#fff',
+      display: 'flex', // Flexbox for alignment
+      flexDirection: 'column', // Stack elements vertically
+      justifyContent: 'center', // Center content vertically
+      alignItems: 'center', // Center content horizontally
+    }}
+  >
+    {/* Close Button */}
+
+    {/* Image */}
+    <h1>Avatar</h1>
+    <div
+      style={{
+        width: '50%',
+        height: '50%',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        border: '1px solid #ddd',
+      }}
+    >
+      <img
+        src={advertiser?.Avatar || '/images/avatars/default-avatar.png'}
+        alt="user-avatar"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        }}
+      />
+      
+    </div>
+    <button
+      onClick={() => deleteImage("avatar")}
+      style={{
+        position: 'absolute',
+        bottom: '10px',
+        right: '10px',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '16px',
+        color: '#333',
+        padding: '5px 10px',
+        borderRadius: '10px 10px 10px',
+        backgroundColor: '#eb0d72b3'
+      }}
+    >
+      Delete Avatar
+    </button>
+  </div>
+  <div
+    style={{
+      width: '60vh',
+      height: '60vh',
+      position: 'relative',
+      border: '1px solid #ddd',
+      borderRadius: '10px',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      overflow: 'hidden',
+      backgroundColor: '#fff',
+      display: 'flex', // Flexbox for alignment
+      flexDirection: 'column', // Stack elements vertically
+      justifyContent: 'center', // Center content vertically
+      alignItems: 'center', // Center content horizontally
+    }}
+  >
+    {/* Close Button */}
+
+
+    {/* Image */}
+    <h1>Profile Banner</h1>
+    <div
+      style={{
+        width: '50%',
+        height: '50%',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        border: '1px solid #ddd',
+      }}
+    >
+      
+    
+      <img
+        src={advertiser?.ProfileBanner || '/images/avatars/default-avatar.png'}
+        alt="user-avatar"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        }}
+      />
+      
+    </div>
+    <button
+      onClick={() => deleteImage("profilebanner")}
+      style={{
+        position: 'absolute',
+        bottom: '10px',
+        right: '10px',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '16px',
+        color: '#333',
+        padding: '5px 10px',
+        borderRadius: '10px 10px 10px',
+        backgroundColor: '#eb0d72b3'
+      }}
+    >
+      Delete Profile Banner
+    </button>
+  </div>
+</Popover>
+  </>
   )
 })
 
