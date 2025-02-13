@@ -150,7 +150,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         localStorage.setItem('profileUsername', data.currentuserName);
 
         // Use the provided URL or default to "http://localhost:3000/home"
-        const targetUrl = data.url || "http://localhost:3000/login";
+        const targetUrl = data.url || "https://swing-social-website.vercel.app/login";
 
         // Open the new site and pass the JWT token via query params
         const urlWithToken = `${targetUrl}?token=${data.jwtToken}`;
