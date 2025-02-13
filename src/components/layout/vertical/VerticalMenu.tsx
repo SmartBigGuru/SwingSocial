@@ -173,6 +173,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
       >
         Email Templates
       </MenuItem>
+      <MenuItem href={(`/admin/sp/Impersonate`)}
+        icon={<i className='ri-mail-line' />}
+        exactMatch={false}
+        activeUrl='/admin/sp/Impersonate'
+      >
+        Impersonate
+      </MenuItem>
       {/*<MenuItem href={(`/admin/sp/contract`)}
         icon={<i className='ri-shake-hands-line' />}
         exactMatch={false}
