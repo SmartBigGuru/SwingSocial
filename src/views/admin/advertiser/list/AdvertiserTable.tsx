@@ -138,7 +138,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: profile.Email }),
+        body: JSON.stringify({ email: profile }),
       });
   
       const data = await response.json();
