@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import Card from '@mui/material/Card'
+import { useTheme } from '@mui/material/styles';
 import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
 import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
 import { CardHeader, Skeleton, TablePagination, Typography, Popover, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
@@ -108,6 +109,8 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [emailBody, setEmailBody] = useState('');
   const [openPopOver, setOpenPopOver] = useState(false);
   const [popData, setPopData] = useState<any>(null);
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
 
   const deleteImage = async (data: any) => {
     console.log(data, "======data in deleteImage");
@@ -735,6 +738,14 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         onClose={() => setOpenPopOver(false)}
         anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
         transformOrigin={{ vertical: 'center', horizontal: 'center' }}
+        PaperProps={{
+          style: {
+            backgroundColor: isDarkMode ? '#28243D' : '#fff',
+            color: isDarkMode ? '#fff' : '#444',
+            border: isDarkMode ? '1px solid #444' : '1px solid #ddd',
+            boxShadow: isDarkMode ? '0 4px 6px rgba(0, 0, 0, 0.5)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
+          },
+        }}
       >
         {['Avatar', 'ProfileBanner'].map((type) => (
           <div
@@ -742,17 +753,15 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
             style={{
               width: '50vh',
               height: '50vh',
+              maxWidth: '40vh',
+              maxHeight: '40vh',
               position: 'relative',
-              border: '1px solid #ddd',
               borderRadius: '10px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
               overflow: 'hidden',
-              backgroundColor: '#fff',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              color: '#444'
             }}
           >
             <h1>{type === 'Avatar' ? 'Avatar' : 'Profile Banner'}</h1>
@@ -762,7 +771,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
                 height: '60%',
                 borderRadius: '10px',
                 overflow: 'hidden',
-                border: '1px solid #ddd',
+                border: isDarkMode ? '1px solid #444' : '1px solid #ddd',
               }}
             >
               <img
@@ -785,7 +794,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: '16px',
-                color: '#333',
+                color: isDarkMode ? '#fff' : '#333',
                 padding: '5px 10px',
                 borderRadius: '10px',
               }}
@@ -802,7 +811,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
                   border: 'none',
                   cursor: 'pointer',
                   fontSize: '16px',
-                  color: '#333',
+                  color: isDarkMode ? '#fff' : '#333',
                   padding: '5px 10px',
                   borderRadius: '10px',
                 }}
