@@ -61,6 +61,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   const [openPopOver, setOpenPopOver] = useState(false);
   const [loading, setLoading] = useState(false)
   const [advertiser, setAdvertiser] = useState<any>({})
+  const [phone, setPhone] = useState("")
   const [contract, setContract] = useState<ContractType[] | undefined>(undefined)
   const isSmScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('sm'))
   const isMdScreen = useMediaQuery((theme: Theme) => theme.breakpoints.only('md'))
@@ -72,6 +73,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       fetchData(id)
     }
   }))
+
 
   const deleteImage = async (data: any) => {
     console.log(data, "======data in deleteImage");
@@ -91,14 +93,28 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   useEffect(() => {
     if (open && refresh) {
       refresh()
+      
     }
   }, [loading])
 
   const fetchData = async (userId: string) => {
-    console.log(userId, "======userId in view");
+    // console.log(userId, "======userId in view", advertiser.Id);
     setLoading(true);
 
     try {
+      //Fetch the Phone
+      const phoneResponse = await fetch(`/api/admin/getphone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId })
+      });
+      const data = await phoneResponse.json();
+      if(data.status == 200){
+        console.log(data, "=========data in getPhone");
+        setPhone(data.phone);
+      }
+      
+
       // Fetch advertiser data using the custom API
       const response = await fetch(`/api/admin/user?id=${userId}`);
       if (!response.ok) {
@@ -127,15 +143,13 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       console.log(contractData, "=========contract data");
       setContract(contractData);
 
+      
     } catch (error: any) {
       console.error('Error fetching data:', error.message);
     } finally {
       setLoading(false);
     }
   };
-
-
-
 
   const DateDifference = (createDate: string) => {
     const currentDate = new Date();
@@ -252,6 +266,12 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                 Location:
               </Typography>
               <Typography variant="body1">{advertiser?.Location || 'Not provided'}</Typography>
+            </div>
+            <div>
+              <Typography variant="body2" color="textSecondary">
+                Phone:
+              </Typography>
+              <Typography variant="body1">{phone || 'Not provided'}</Typography>
             </div>
             <div>
               <Typography variant="body2" color="textSecondary">
