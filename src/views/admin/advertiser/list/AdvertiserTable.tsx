@@ -336,7 +336,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const fetchData = async () => {
     const sType = searchParams.get('type') ?? '';
     const sSearch = searchParams.get('search') ?? '';
-    const sPage = Number(searchParams.get('page') ?? 1);
+    let sPage = Number(searchParams.get('page') ?? 1);
     const sSize = Number(searchParams.get('size') ?? 10);
   
     try {
@@ -345,6 +345,9 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   
       if (sType) params.append('type', sType);
       if (sSearch) params.append('search', sSearch);
+      if (sPage == 0) {
+        sPage = 1
+      }
       params.append('page', sPage.toString());
       params.append('size', sSize.toString());
       const apiUrl = `${query}${params}`;
