@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Card from '@mui/material/Card'
 import { rankItem, type RankingInfo } from '@tanstack/match-sorter-utils'
 import { createColumnHelper, flexRender, getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type FilterFn } from '@tanstack/react-table'
-import { CardHeader, Skeleton, TablePagination, Typography, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
+import { CardHeader, Skeleton, TablePagination, Typography, Popover, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
 import classNames from 'classnames'
 import { jwtDecode } from 'jwt-decode';
 import { toast } from 'react-toastify'
@@ -106,6 +106,22 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
   const [profileId, setProfileId] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
+  const [openPopOver, setOpenPopOver] = useState(false);
+  const [popData, setPopData] = useState<any>(null);
+
+  const deleteImage = async (data: any) => {
+    console.log(data, "======data in deleteImage");
+    await fetch(`/api/admin/deleteImage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: data, userId: popData?.Id }),
+    });
+    // setOpen(false)
+    setOpenPopOver(false)
+      setLoading(true);
+    }
 
   const handleOpenDialog = () => {
     setOpenDialog(true);
@@ -372,7 +388,6 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
   // Hooks
   useEffect(() => {
-
     changeParam()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size, pageIndex, type, search])
@@ -431,7 +446,7 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           const avatarColor = genColor(username);
 
           return (
-            <div className='flex items-center gap-3'>
+            <div className='flex items-center gap-3' onMouseOver={() => {setOpenPopOver(!openPopOver); setPopData(row.original); console.log("openPopOver", openPopOver)}} >
               <CustomAvatar style={{ backgroundColor: avatarColor }} skin='light-static' src={row.original.Avatar} />
             </div>
           )
@@ -715,6 +730,130 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Popover
+        open={openPopOver}
+        onClose={() => setOpenPopOver(false)}
+        anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'center', horizontal: 'center' }}
+      >
+        <div
+          style={{
+            width: '60vh',
+            height: '60vh',
+            position: 'relative',
+            border: '1px solid #ddd',
+            borderRadius: '10px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden',
+            backgroundColor: '#fff',
+            display: 'flex', // Flexbox for alignment
+            flexDirection: 'column', // Stack elements vertically
+            justifyContent: 'center', // Center content vertically
+            alignItems: 'center', // Center content horizontally
+          }}
+        >
+
+          <h1>Avatar</h1>
+          <div
+            style={{
+              width: '50%',
+              height: '50%',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              border: '1px solid #ddd',
+            }}
+          >
+            <img
+              src={popData?.Avatar || '/images/avatars/default-avatar.png'}
+              alt="user-avatar"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+            
+          </div>
+          <button
+            onClick={() => deleteImage("avatar")}
+            style={{
+              position: 'absolute',
+              bottom: '10px',
+              right: '10px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '16px',
+              color: '#333',
+              padding: '5px 10px',
+              borderRadius: '10px 10px 10px',
+              backgroundColor: '#eb0d72b3'
+            }}
+          >
+            Delete Avatar
+          </button>
+        </div>
+        <div
+          style={{
+            width: '60vh',
+            height: '60vh',
+            position: 'relative',
+            border: '1px solid #ddd',
+            borderRadius: '10px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden',
+            backgroundColor: '#fff',
+            display: 'flex', // Flexbox for alignment
+            flexDirection: 'column', // Stack elements vertically
+            justifyContent: 'center', // Center content vertically
+            alignItems: 'center', // Center content horizontally
+          }}
+        >
+
+          <h1>Profile Banner</h1>
+          <div
+            style={{
+              width: '50%',
+              height: '50%',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              border: '1px solid #ddd',
+            }}
+          >
+            
+          
+            <img
+              src={ popData?.ProfileBanner || '/images/avatars/default-avatar.png'}
+              alt="user-avatar"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+            
+          </div>
+          <button
+            onClick={() => deleteImage("profilebanner")}
+            style={{
+              position: 'absolute',
+              bottom: '10px',
+              right: '10px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '16px',
+              color: '#333',
+              padding: '5px 10px',
+              borderRadius: '10px 10px 10px',
+              backgroundColor: '#eb0d72b3'
+            }}
+          >
+            Delete Profile Banner
+          </button>
+        </div>
+      </Popover>
 
     </>
   )

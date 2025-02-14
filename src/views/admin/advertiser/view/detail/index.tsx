@@ -75,20 +75,20 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
   }))
 
 
-  const deleteImage = async (data: any) => {
-    console.log(data, "======data in deleteImage");
-    await fetch(`/api/admin/deleteImage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ data: data, userId: advertiser?.Id }),
-    });
-    setOpen(false)
-    setOpenPopOver(false)
-    setLoading(true);
+  // const deleteImage = async (data: any) => {
+  //   console.log(data, "======data in deleteImage");
+  //   await fetch(`/api/admin/deleteImage`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify({ data: data, userId: advertiser?.Id }),
+  //   });
+  //   setOpen(false)
+  //   setOpenPopOver(false)
+  //   setLoading(true);
 
-  }
+  // }
 
   useEffect(() => {
     if (open && refresh) {
@@ -351,7 +351,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
     </CardContent>
   </div>
 </Dialog>
-<Popover
+{/* <Popover
   open={openPopOver}
   onClose={() => setOpenPopOver(false)}
   anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
@@ -373,9 +373,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       alignItems: 'center', // Center content horizontally
     }}
   >
-    {/* Close Button */}
 
-    {/* Image */}
     <h1>Avatar</h1>
     <div
       style={{
@@ -432,10 +430,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       alignItems: 'center', // Center content horizontally
     }}
   >
-    {/* Close Button */}
 
-
-    {/* Image */}
     <h1>Profile Banner</h1>
     <div
       style={{
@@ -478,7 +473,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
       Delete Profile Banner
     </button>
   </div>
-</Popover>
+</Popover> */}
   </>
   )
 })
