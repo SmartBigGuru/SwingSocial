@@ -256,7 +256,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
         {/* Left Column: Overview Section */}
 
         <Grid item lg={4} md={5} xs={12}>
-          <div className="flex flex-col gap-6 bg-gray-50 p-4 rounded-lg shadow-sm">
+          <div className="flex flex-col gap-6 p-4 rounded-lg shadow-sm">
             <Typography variant="h6" className="font-semibold">
               Profile Overview
             </Typography>
