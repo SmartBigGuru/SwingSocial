@@ -177,18 +177,17 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 };
 
   const changeParam = () => {
-    const searchParams = new URLSearchParams()
+    const searchParams = new URLSearchParams();
 
-    if (type) searchParams.set('type', type)
-    if (search) searchParams.set('search', search)
+    if (type) searchParams.set('type', type);
+    if (search) searchParams.set('search', search);
 
-    console.log(String(size));
-    searchParams.set('size', String(size))
-    searchParams.set('page', String(pageIndex))
-    const queryString = searchParams.toString()
+    searchParams.set('size', String(size));
+    searchParams.set('page', String(pageIndex + 1)); // Adjust page index for 1-based pagination
+    const queryString = searchParams.toString();
 
-    router.push(`/admin/sp/advertiser-manage/${queryString ? `?${queryString}` : ''}`)
-  }
+    router.push(`/admin/sp/advertiser-manage/${queryString ? `?${queryString}` : ''}`);
+  };
   async function deleteUser(userId: string, userName: string) {
     try {
       console.log(userId, "====userId");
@@ -335,38 +334,36 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
     setOpenHistory(true);
   }
   const fetchData = async () => {
-    const sType = (searchParams.get('type') ?? '');
-    const sSearch = (searchParams.get('search') ?? '');
-    var sPage = (Number(searchParams.get('page') ?? 1))
-    const sSize = (Number(searchParams.get('size') ?? 10))
-
+    const sType = searchParams.get('type') ?? '';
+    const sSearch = searchParams.get('search') ?? '';
+    const sPage = Number(searchParams.get('page') ?? 1);
+    const sSize = Number(searchParams.get('size') ?? 10);
+  
     try {
-      let query = '/api/admin/user?'
+      let query = '/api/admin/user?';
       const params = new URLSearchParams();
-
+  
       if (sType) params.append('type', sType);
       if (sSearch) params.append('search', sSearch);
-      if (sPage == 0) {
-        sPage = 1
-      }
       params.append('page', sPage.toString());
       params.append('size', sSize.toString());
-      const apiUrl = `${query}${params}`
-      console.log(apiUrl)
+      const apiUrl = `${query}${params}`;
+      console.log(apiUrl);
       const response = await fetch(apiUrl);
-
+  
       if (!response.ok) {
         throw new Error('Failed to fetch user data');
       }
-
+  
       const data = await response.json();
       console.log(data);
-      setSearchData(data?.profiles)
-      setLoading(false)
-      setTotalCount(Number(data.totalCount))
+      setSearchData(data?.profiles);
+      setLoading(false);
+      setTotalCount(Number(data.totalCount));
     } catch (error: any) {
+      console.error('Error fetching data:', error.message);
     }
-  }
+  };
 
   const genColor = (name: string) => {
     const hashCode = (str: string): number => {
@@ -388,23 +385,23 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
 
   // Hooks
   useEffect(() => {
-    changeParam()
+    changeParam();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [size, pageIndex, type, search])
-
+  }, [size, pageIndex, type, search]);
+  
   useEffect(() => {
     const debouncedFetch = setTimeout(() => {
-      fetchData()
-    }, 500)
-
+      fetchData();
+    }, 500);
+  
     setType(searchParams.get('type') ?? '');
     setSearch(searchParams.get('search') ?? '');
-    setPageIndex(Number(searchParams.get('page') ?? 0))
-    setSize(Number(searchParams.get('size') ?? 10))
-
-    return () => clearTimeout(debouncedFetch)
+    setPageIndex(Number(searchParams.get('page') ?? 1) - 1); // Adjust page index for 0-based pagination
+    setSize(Number(searchParams.get('size') ?? 10));
+  
+    return () => clearTimeout(debouncedFetch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchParams]);
 
   const DeactiveAction = async (userId: string) => {
     try {
@@ -686,17 +683,16 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
           count={totalCount}
           rowsPerPage={size}
           page={pageIndex}
-
           SelectProps={{
             inputProps: { 'aria-label': 'rows per page' }
           }}
           onPageChange={(_, page) => {
-            setPageIndex(page)
+            setPageIndex(page);
           }}
           onRowsPerPageChange={e => {
-            setSize(Number(e.target.value))
-            table.setPageSize(Number(e.target.value))
-            setPageIndex(0)
+            setSize(Number(e.target.value));
+            table.setPageSize(Number(e.target.value));
+            setPageIndex(0);
           }}
         />
       </Card>
@@ -737,122 +733,82 @@ const UserTable = forwardRef<RefreshHandle>(({ }, ref) => {
         anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
         transformOrigin={{ vertical: 'center', horizontal: 'center' }}
       >
-        <div
-          style={{
-            width: '60vh',
-            height: '60vh',
-            position: 'relative',
-            border: '1px solid #ddd',
-            borderRadius: '10px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            overflow: 'hidden',
-            backgroundColor: '#fff',
-            display: 'flex', // Flexbox for alignment
-            flexDirection: 'column', // Stack elements vertically
-            justifyContent: 'center', // Center content vertically
-            alignItems: 'center', // Center content horizontally
-          }}
-        >
-
-          <h1>Avatar</h1>
+        {['Avatar', 'ProfileBanner'].map((type) => (
           <div
+            key={type}
             style={{
-              width: '50%',
-              height: '50%',
-              borderRadius: '10px',
-              overflow: 'hidden',
+              width: '50vh',
+              height: '50vh',
+              position: 'relative',
               border: '1px solid #ddd',
-            }}
-          >
-            <img
-              src={popData?.Avatar || '/images/avatars/default-avatar.png'}
-              alt="user-avatar"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-            
-          </div>
-          <button
-            onClick={() => deleteImage("avatar")}
-            style={{
-              position: 'absolute',
-              bottom: '10px',
-              right: '10px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '16px',
-              color: '#333',
-              padding: '5px 10px',
-              borderRadius: '10px 10px 10px',
-              backgroundColor: '#eb0d72b3'
-            }}
-          >
-            Delete Avatar
-          </button>
-        </div>
-        <div
-          style={{
-            width: '60vh',
-            height: '60vh',
-            position: 'relative',
-            border: '1px solid #ddd',
-            borderRadius: '10px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            overflow: 'hidden',
-            backgroundColor: '#fff',
-            display: 'flex', // Flexbox for alignment
-            flexDirection: 'column', // Stack elements vertically
-            justifyContent: 'center', // Center content vertically
-            alignItems: 'center', // Center content horizontally
-          }}
-        >
-
-          <h1>Profile Banner</h1>
-          <div
-            style={{
-              width: '50%',
-              height: '50%',
               borderRadius: '10px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
               overflow: 'hidden',
-              border: '1px solid #ddd',
+              backgroundColor: '#fff',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#444'
             }}
           >
-            
-          
-            <img
-              src={ popData?.ProfileBanner || '/images/avatars/default-avatar.png'}
-              alt="user-avatar"
+            <h1>{type === 'Avatar' ? 'Avatar' : 'Profile Banner'}</h1>
+            <div
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
+                width: '60%',
+                height: '60%',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                border: '1px solid #ddd',
               }}
-            />
-            
+            >
+              <img
+                src={
+                  type === 'Avatar'
+                    ? popData?.Avatar || '/images/avatars/default-avatar.png'
+                    : popData?.ProfileBanner || '/images/avatars/default-avatar.png'
+                }
+                alt={type.toLowerCase()}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            <button
+              onClick={() => deleteImage(type.toLowerCase())}
+              style={{
+                position: 'absolute',
+                bottom: '10px',
+                right: '10px',
+                background: '#eb0d72b3',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                color: '#333',
+                padding: '5px 10px',
+                borderRadius: '10px',
+              }}
+            >
+              Delete {type === 'Avatar' ? 'Avatar' : 'Profile Banner'}
+            </button>
+            {type === 'Avatar' && (
+              <button
+                onClick={() => setOpenPopOver(false)}
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  color: '#333',
+                  padding: '5px 10px',
+                  borderRadius: '10px',
+                }}
+              >
+                ❌
+              </button>
+            )}
           </div>
-          <button
-            onClick={() => deleteImage("profilebanner")}
-            style={{
-              position: 'absolute',
-              bottom: '10px',
-              right: '10px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '16px',
-              color: '#333',
-              padding: '5px 10px',
-              borderRadius: '10px 10px 10px',
-              backgroundColor: '#eb0d72b3'
-            }}
-          >
-            Delete Profile Banner
-          </button>
-        </div>
+        ))}
       </Popover>
 
     </>
