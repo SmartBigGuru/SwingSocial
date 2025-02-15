@@ -220,6 +220,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
         setTickets([]); // Clear tickets data if event not found
       } else {
         console.log(event, "=========event data");
+        console.log(attendees, "=========attendees data");
         setEvent(event);
         setRSVP(rsvp || []); // Set RSVP data if available
         setAttendees(attendees || []); // Set Attendees data if available
@@ -860,7 +861,7 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                       />
                     </div>
 
-                    {/* <div className="w-full mt-6">
+                    <div className="w-full mt-6">
                       <Typography variant="h6" className="font-medium mb-2">
                         Attendees List
                       </Typography>
@@ -937,9 +938,10 @@ const DetailView = forwardRef<DetailViewHandle, RefreshAction>((props, ref) => {
                         disableRowSelectionOnClick
                         getRowId={(row: any) => row.ProfileId}
                       />
-                    </div> */}
+                    </div>
                   </Grid>
                 </Grid>
+                
               </CardContent>
             )}
           </Grid>
